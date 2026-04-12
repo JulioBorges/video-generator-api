@@ -5,11 +5,11 @@ import { z } from "zod";
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
-  API_KEY: z.string().min(1, "API_KEY is required"),
+  API_KEY: z.string().default(""),
 
-  ELEVENLABS_API_KEY: z.string().min(1, "ELEVENLABS_API_KEY is required"),
-  SERPAPI_KEY: z.string().min(1, "SERPAPI_KEY is required"),
-  PEXELS_API_KEY: z.string().min(1, "PEXELS_API_KEY is required"),
+  ELEVENLABS_API_KEY: z.string().default(""),
+  SERPAPI_KEY: z.string().default(""),
+  PEXELS_API_KEY: z.string().default(""),
 
   STORAGE_TYPE: z.enum(["local", "gcs"]).default("local"),
   GCS_BUCKET: z.string().optional(),
@@ -34,6 +34,18 @@ function loadConfig() {
   }
 
   const env = result.data;
+
+  // Warn about missing API keys (don't crash — let the server start for health checks)
+  const missingKeys = [
+    ["API_KEY", env.API_KEY],
+    ["ELEVENLABS_API_KEY", env.ELEVENLABS_API_KEY],
+    ["SERPAPI_KEY", env.SERPAPI_KEY],
+    ["PEXELS_API_KEY", env.PEXELS_API_KEY],
+  ].filter(([, v]) => !v).map(([k]) => k);
+
+  if (missingKeys.length > 0) {
+    console.warn(`⚠️  Missing env vars: ${missingKeys.join(", ")}. Video generation will fail.`);
+  }
 
   if (env.STORAGE_TYPE === "gcs") {
     if (!env.GCS_BUCKET) throw new Error("GCS_BUCKET is required when STORAGE_TYPE=gcs");
