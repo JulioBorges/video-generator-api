@@ -33,7 +33,7 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --legacy-peer-deps --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY static/ ./static/
