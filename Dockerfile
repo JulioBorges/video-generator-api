@@ -1,6 +1,8 @@
 # Build stage
 FROM node:22-alpine AS builder
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -33,7 +35,9 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --omit=dev
+RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+    && npm install --legacy-peer-deps --omit=dev \
+    && apk del .build-deps
 
 COPY --from=builder /app/dist ./dist
 COPY static/ ./static/
