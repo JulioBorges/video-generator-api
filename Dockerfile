@@ -51,9 +51,12 @@ COPY --from=builder /app/src/remotion ./src/remotion
 COPY static/ ./static/
 
 # Data directory (Cloud Run writable area)
-
 RUN mkdir -p /app/data/videos /app/data/temp && \
     chown -R node:node /app/data
+
+# Remotion cache — renderer downloads Chrome Headless Shell here at runtime
+RUN mkdir -p /app/node_modules/.remotion && \
+    chown -R node:node /app/node_modules/.remotion
 
 USER node
 
