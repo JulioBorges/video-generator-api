@@ -40,7 +40,11 @@ async function bootstrap() {
 
   const ffmpeg = await FFmpegService.init();
   const remotion = new RemotionService(config);
-  await remotion.init();
+
+  // Start Remotion bundling in background — server must listen on PORT before Cloud Run timeout
+  remotion.init().catch((err) => {
+    logger.error(err, "Remotion init failed — video rendering will be unavailable");
+  });
 
   // Orchestrator
   const pipeline = new VideoPipeline(

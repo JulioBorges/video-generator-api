@@ -35,10 +35,16 @@ export interface RemotionRenderInput {
 
 export class RemotionService {
   private bundled: string | null = null;
+  private initPromise: Promise<void> | null = null;
 
   constructor(private appConfig: AppConfig) { }
 
   async init(): Promise<void> {
+    this.initPromise = this._doInit();
+    return this.initPromise;
+  }
+
+  private async _doInit(): Promise<void> {
     await ensureBrowser();
     const entryPoint = path.join(
       this.appConfig.packageDirPath,
@@ -51,6 +57,10 @@ export class RemotionService {
   }
 
   async render(input: RemotionRenderInput, videoId: string): Promise<string> {
+    // Wait for lazy init to complete if still running
+    if (this.initPromise) {
+      await this.initPromise;
+    }
     if (!this.bundled) throw new Error("RemotionService not initialized — call init() first");
 
     const compositionId =

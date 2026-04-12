@@ -15,7 +15,11 @@ const envSchema = z.object({
   GCS_BUCKET: z.string().optional(),
   GCS_KEY_FILE: z.string().optional(),
 
-  DATA_DIR_PATH: z.string().default(path.join(os.homedir(), ".yt-video-generator")),
+  DATA_DIR_PATH: z.string().default(
+    process.env.NODE_ENV === "production"
+      ? "/app/data"
+      : path.join(os.homedir(), ".yt-video-generator"),
+  ),
   LOG_LEVEL: z.string().default("info"),
   CONCURRENCY: z.coerce.number().default(1),
 });
