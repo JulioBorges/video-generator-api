@@ -11,7 +11,7 @@ RUN npm install --legacy-peer-deps
 COPY tsconfig*.json ./
 COPY src/ ./src/
 
-RUN NODE_OPTIONS=--max-old-space-size=8192 npm run build
+RUN NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 # Production stage
 FROM node:22-alpine
