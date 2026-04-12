@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - API_KEY=${API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - SERPAPI_KEY=${SERPAPI_KEY}
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - GCS_BUCKET=${GCS_BUCKET:-}
+      - GCS_KEY_FILE=${GCS_KEY_FILE:-}
+      - DATA_DIR_PATH=/app/data
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CONCURRENCY=${CONCURRENCY:-1}
+      - DOCKER=true
+    volumes:
+      - video_data:/app/data
+      # Mount GCS key file if using GCS storage
+      # - ./service-account.json:/app/service-account.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2"
+        reservations:
+          memory: 2G
+
+volumes:
+  video_data:
+    driver: local

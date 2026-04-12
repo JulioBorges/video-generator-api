@@ -1,0 +1,110 @@
+### Create YouTube landscape video
+POST http://localhost:3000/api/videos
+Content-Type: application/json
+X-API-Key: your-secret-api-key-here
+
+{
+  "script": "Neste vídeo vamos explorar como a inteligência artificial está revolucionando o mundo moderno. Desde diagnósticos médicos até carros autônomos, a IA já faz parte do nosso cotidiano.",
+  "language": "pt",
+  "videoItems": [
+    {
+      "searchTerm": "inteligencia artificial futuro",
+      "type": "video",
+      "displayMode": "fit"
+    },
+    {
+      "searchTerm": "neural network diagram",
+      "type": "image",
+      "displayMode": "ken_burns"
+    },
+    {
+      "searchTerm": "Inteligência Artificial",
+      "type": "animated_text",
+      "displayMode": "typewriter"
+    }
+  ],
+  "useSrt": true,
+  "srtStyle": {
+    "position": "bottom",
+    "backgroundColor": "#0066ff",
+    "fontSize": 52,
+    "fontFamily": "Inter"
+  },
+  "useBackgroundMusic": true,
+  "backgroundMusicStyle": "hopeful",
+  "config": {
+    "orientation": "landscape",
+    "paddingBack": 1500,
+    "musicVolume": "medium"
+  }
+}
+
+###
+
+### Create YouTube Shorts (portrait) video
+POST http://localhost:3000/api/videos
+Content-Type: application/json
+X-API-Key: your-secret-api-key-here
+
+{
+  "script": "Did you know that E equals mc squared means energy equals mass times the speed of light squared?",
+  "language": "en",
+  "videoItems": [
+    {
+      "searchTerm": "physics science laboratory",
+      "type": "video"
+    },
+    {
+      "searchTerm": "E = mc²",
+      "type": "formula",
+      "displayMode": "reveal"
+    }
+  ],
+  "useSrt": true,
+  "useBackgroundMusic": true,
+  "backgroundMusicStyle": "contemplative",
+  "config": {
+    "orientation": "portrait",
+    "musicVolume": "low"
+  }
+}
+
+###
+
+### Check video status
+GET http://localhost:3000/api/videos/{{videoId}}/status
+X-API-Key: your-secret-api-key-here
+
+###
+
+### List all videos
+GET http://localhost:3000/api/videos
+X-API-Key: your-secret-api-key-here
+
+###
+
+### Download video
+GET http://localhost:3000/api/videos/{{videoId}}
+X-API-Key: your-secret-api-key-here
+
+###
+
+### Delete video
+DELETE http://localhost:3000/api/videos/{{videoId}}
+X-API-Key: your-secret-api-key-here
+
+###
+
+### List music styles
+GET http://localhost:3000/api/videos/music-styles
+X-API-Key: your-secret-api-key-here
+
+###
+
+### Health check (no auth required)
+GET http://localhost:3000/health
+
+###
+
+### Swagger docs (no auth required)
+GET http://localhost:3000/docs
