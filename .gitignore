@@ -2,9 +2,12 @@ node_modules/
 dist/
 .env
 *.log
+# Ignore all media except static assets
 *.mp4
 *.mp3
 *.wav
+!static/music/*.mp3
+!static/music/*.wav
 .DS_Store
 coverage/
 ~/.yt-video-generator/

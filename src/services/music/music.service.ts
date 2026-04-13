@@ -60,7 +60,7 @@ export class MusicService {
     for (const track of MUSIC_LIST) {
       const filePath = path.join(this.musicDirPath, track.file);
       if (!fs.existsSync(filePath)) {
-        logger.warn({ file: track.file }, "Music file missing — copy from short-video-maker/static/music/");
+        logger.warn({ file: track.file }, "Music file missing — copy to static/music/");
       }
     }
   }
