@@ -1,0 +1,307 @@
+[
+    {
+        "name": "video-optimization",
+        "description": "When the user wants to optimize videos for Google Search, video sitemap, VideoObject schema, or video SEO on websites. Also use when the user mentions 'video SEO,' 'video sitemap,' 'VideoObject,' 'video thumbnail,' 'video indexing,' 'video preview,' 'key moments,' 'Clip schema,' or 'embedded video optimization.' For page template, use article-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/video-optimization/SKILL.md"
+    },
+    {
+        "name": "generative-engine-optimization",
+        "description": "When the user wants to optimize for AI search visibility (ChatGPT, Claude, Perplexity, AI Overviews). Also use when the user mentions 'GEO,' 'AEO,' 'generative engine optimization,' 'AI search visibility,' 'LLM optimization,' 'GitHub GEO,' 'Grokipedia,' 'optimize for ChatGPT,' 'AI Overviews,' 'Bing Copilot,' 'Yandex AI,' 'Perplexity optimization,' 'GEO strategy,' or 'AI search optimization.' For third-party publishing strategy (which platforms to use), use parasite-seo. For GitHub repos, README, and Awesome lists, use github. For Medium.com only, use medium-posts. For Grokipedia edits, use grokipedia-recommendations. For traditional Google SERP strategy, use seo-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/commercial/geo/SKILL.md"
+    },
+    {
+        "name": "parasite-seo",
+        "description": "When the user wants to choose or execute third-party platform SEO (high-authority sites for rankings or backlinks). Also use when the user mentions 'parasite SEO,' 'parasitic SEO,' 'barnacle SEO,' 'hosted content,' 'third-party publishing,' 'Medium SEO,' 'Reddit SEO,' 'GitHub parasite SEO,' 'LinkedIn Pulse SEO,' 'high-authority platforms,' 'distributed authority,' 'borrow domain authority,' or 'rank without own website.' For GitHub-specific playbooks, use github. For Medium.com posts, use medium-posts. For Grokipedia, use grokipedia-recommendations. For AI answer-engine visibility (not platform selection), use generative-engine-optimization.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/parasite-seo/SKILL.md"
+    },
+    {
+        "name": "youtube-seo",
+        "description": "When the user wants to optimize YouTube videos for search, create video descriptions, or improve channel visibility. Also use when the user mentions 'YouTube SEO,' 'YouTube description,' 'YouTube tags,' 'YouTube thumbnail,' 'YouTube title,' 'YouTube channel,' or 'video SEO.' For YouTube ads, use youtube-ads.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/main/skills/platforms/youtube/SKILL.md"
+    },
+    {
+        "name": "youtube-ads",
+        "description": "When the user wants to run YouTube ads, set up TrueView or Bumper campaigns, or optimize video ad creative. Also use when the user mentions 'YouTube ads,' 'TrueView,' 'Bumper ads,' 'YouTube Discovery,' 'video ads,' 'YouTube campaign,' or 'in-feed ads.' For organic YouTube, use youtube-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/paid-ads/platforms/youtube-ads/SKILL.md"
+    },
+    {
+        "name": "content-marketing",
+        "description": "When the user wants to plan content marketing across channels, define content types and formats, or create a content repurposing strategy. Also use when the user mentions 'content marketing strategy,' 'content types,' 'content formats,' 'content repurposing,' 'content calendar,' 'content mix,' 'owned content,' 'content distribution,' 'content funnel,' or 'content planning across channels.' For SEO calendar, use content-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/brand/content-marketing/SKILL.md"
+    },
+    {
+        "name": "serp-features",
+        "description": "When the user wants to understand or optimize for SERP feature types (PAA, sitelinks, rich results, AI Overviews). Also use when the user mentions 'SERP,' 'SERP features,' 'search result features,' 'People Also Ask,' 'PAA,' 'sitelinks,' 'knowledge panel,' 'local pack,' 'rich results,' 'zero-click,' 'SERP types,' 'AI Overviews,' 'Bing Copilot,' or 'Yandex AI.' For JSON-LD and rich result implementation, use schema-markup. For organic strategy and roadmap, use seo-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/serp-features/SKILL.md"
+    },
+    {
+        "name": "image-optimization",
+        "description": "When the user wants to optimize images for search engines and performance. Also use when the user mentions 'image SEO,' 'alt text,' 'image captions,' 'figcaption,' 'image optimization,' 'WebP,' 'lazy loading,' 'LCP,' 'image sitemap,' 'responsive images,' 'srcset,' 'image format,' or 'hero image optimization.' For CWV, use core-web-vitals.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/image-optimization/SKILL.md"
+    },
+    {
+        "name": "tools-page-generator",
+        "description": "When the user wants to create, optimize, or audit free tools pages. Also use when the user mentions 'free tools,' 'tools page,' 'toolkit,' 'free [X] tool,' 'free [X] calculator,' 'free [X] checker,' 'lead magnet tool,' 'programmatic tools,' or 'tools hub.' For content strategy, use content-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/main/skills/pages/content/tools/SKILL.md"
+    },
+    {
+        "name": "video-marketing",
+        "description": "When the user wants to plan video marketing, create video scripts, or optimize for short-form or long-form video. Also use when the user mentions 'video marketing,' 'video script,' 'short-form video,' 'long-form video,' 'TikTok script,' 'Reels script,' 'YouTube script,' 'video hook,' or 'video content strategy.' For on-site video SEO, use video-optimization.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/content/video/SKILL.md"
+    },
+    {
+        "name": "featured-snippet",
+        "description": "When the user wants to optimize for Featured Snippets, Position Zero, or snippet extraction. Also use when the user mentions 'featured snippet,' 'position zero,' 'snippet optimization,' 'answer box,' 'definition box,' 'list snippet,' 'table snippet,' 'paragraph snippet,' 'PAA optimization,' or 'win position zero.' For schema, use schema-markup. For step-by-step HowTo sections (lists, copy), use howto-section-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/featured-snippet/SKILL.md"
+    },
+    {
+        "name": "article-page-generator",
+        "description": "When the user wants to design, optimize, or audit article pages. Also use when the user mentions 'article page,' 'blog post page,' 'individual guide page,' or 'long-form content page.' For article body creation, use article-content.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/article/SKILL.md"
+    },
+    {
+        "name": "github",
+        "description": "When the user wants to optimize GitHub repositories for Search and AI visibility. Also use when the user mentions 'GitHub SEO,' 'GitHub GEO,' 'README optimization,' 'Awesome list SEO,' 'Grokipedia mentions,' or 'Open Source SEO.' For Medium.com, use medium-posts. For Grokipedia, use grokipedia-recommendations. For AI answer-engine visibility (non-platform), use generative-engine-optimization.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/github/SKILL.md"
+    },
+    {
+        "name": "medium-posts",
+        "description": "When the user wants to publish and optimize posts on Medium.com. Also use when the user mentions 'Medium SEO,' 'Medium publishing,' 'Medium canonical,' or 'hosted content on Medium.' For other platforms, use parasite-seo. For GitHub, use github.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/medium/SKILL.md"
+    },
+    {
+        "name": "grokipedia-recommendations",
+        "description": "When the user wants to optimize for Grokipedia visibility and entity recommendations. Also use when the user mentions 'Grokipedia,' 'Grok recommendations,' 'X.ai Grok SEO,' 'entity optimization for Grok,' or 'Grokipedia edits.' For GitHub, use github. For Medium.com, use medium-posts. For general AI answer engine visibility, use generative-engine-optimization.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/grokipedia/SKILL.md"
+    },
+    {
+        "name": "seo-strategy",
+        "description": "When the user wants an end-to-end SEO roadmap, prioritization, or workflow order. Also use when the user mentions 'SEO strategy,' 'SEO roadmap,' 'SEO prioritization,' 'Product-Led SEO,' 'where to start with SEO,' or 'SEO workflow.' For auditing an existing site, use seo-audit.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/structure/seo/SKILL.md"
+    },
+    {
+        "name": "content-strategy",
+        "description": "When the user wants to plan content clusters, pillar pages, or an editorial calendar. Also use when the user mentions 'content strategy,' 'topic clusters,' 'pillar pages,' 'editorial calendar,' 'content hub planning,' or 'content grouping for SEO.' For page-level optimization, use content-optimization.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/content/content-strategy/SKILL.md"
+    },
+    {
+        "name": "schema-markup",
+        "description": "When the user wants to implement or audit structured data (JSON-LD). Also use when the user mentions 'schema markup,' 'JSON-LD,' 'structured data,' 'rich results,' 'VideoObject schema,' 'Organization schema,' 'Product schema,' or 'FAQ schema.' For visual SERP feature types, use serp-features.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/schema/SKILL.md"
+    },
+    {
+        "name": "core-web-vitals",
+        "description": "When the user wants to optimize or audit Core Web Vitals (LCP, INP, CLS). Also use when the user mentions 'Core Web Vitals,' 'CWV,' 'page speed,' 'LCP,' 'FID,' 'INP,' 'CLS,' 'Page Experience,' or 'performance SEO.' For mobile usability, use mobile-friendly.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/technical/core-web-vitals/SKILL.md"
+    },
+    {
+        "name": "howto-section-generator",
+        "description": "When the user wants to create or optimize step-by-step HowTo sections with schema. Also use when the user mentions 'HowTo section,' 'step-by-step list,' 'ordered steps,' or 'HowTo JSON-LD.' Used for embedding in article, doc, or tool pages. Not a standalone page template.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/components/content/howto-section/SKILL.md"
+    },
+    {
+        "name": "paid-ads-strategy",
+        "description": "When the user wants to choose paid ad channels, allocate budgets, or define a cross-platform ad strategy. Also use when the user mentions 'paid ads strategy,' 'which ad platform to use,' 'ad budget allocation,' 'multichannel ads,' 'PPC strategy,' or 'advertising roadmap.' For platform-specific execution, use google-ads, meta-ads, tiktok-ads, etc.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/commercial/paid-ads/SKILL.md"
+    },
+    {
+        "name": "integrated-marketing",
+        "description": "When the user wants to plan integrated marketing campaigns across multiple channels (PESO model). Also use when the user mentions 'integrated marketing,' 'IMC,' 'PESO model,' 'multichannel campaign planning,' 'cross-channel marketing,' or 'campaign orchestration.' For brand-level strategy, use branding.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/brand/integrated-marketing/SKILL.md"
+    },
+    {
+        "name": "email-marketing",
+        "description": "When the user wants to plan email marketing, newsletters, or EDM strategy. Also use when the user mentions 'email marketing,' 'newsletter strategy,' 'EDM,' 'email deliverability,' 'welcome sequence,' or 'email-SEO synergy.' For lead generation forms, use landing-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/channels/owned/email-marketing/SKILL.md"
+    },
+    {
+        "name": "twitter-x-posts",
+        "description": "When the user wants to create or optimize posts for X (Twitter). Also use when the user mentions 'Twitter post,' 'X post,' 'Twitter thread,' 'X thread,' 'Twitter copy,' or 'X image specs.' For paid X ads, use native-ads or paid-ads-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/x/SKILL.md"
+    },
+    {
+        "name": "linkedin-posts",
+        "description": "When the user wants to create or optimize posts for LinkedIn. Also use when the user mentions 'LinkedIn post,' 'professional post copy,' 'LinkedIn hook,' or 'LinkedIn image specs.' For paid LinkedIn ads, use linkedin-ads.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/linkedin/SKILL.md"
+    },
+    {
+        "name": "tiktok-captions",
+        "description": "When the user wants to create or optimize organic TikTok captions, video scripts, or hooks. Also use when the user mentions 'TikTok caption,' 'TikTok script,' 'TikTok video specs,' 'TikTok hook,' or 'organic TikTok strategy.' For paid TikTok ads, use tiktok-ads.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/platforms/tiktok/SKILL.md"
+    },
+    {
+        "name": "landing-page-generator",
+        "description": "When the user wants to create, optimize, or audit landing pages for conversion. Also use when the user mentions 'landing page,' 'LP,' 'conversion page,' 'sales page,' 'squeeze page,' 'lead gen page,' or 'campaign landing page.' For sitewide page planning, use website-structure.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/landing-page/SKILL.md"
+    },
+    {
+        "name": "customer-stories-page-generator",
+        "description": "When the user wants to create, optimize, or audit customer story or case study pages. Also use when the user mentions 'customer stories,' 'case studies,' 'success stories,' 'customer testimonials page,' or 'client results.' For individual testimonial blocks, use testimonials-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/customer-stories/SKILL.md"
+    },
+    {
+        "name": "branding",
+        "description": "When the user wants to define brand strategy, storytelling, voice, or visual identity foundations. Also use when the user mentions 'brand strategy,' 'brand voice,' 'brand storytelling,' 'brand identity,' 'brand guidelines,' or 'brand positioning.' For visual component tokens (colors, fonts), use brand-visual-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/brand/branding/SKILL.md"
+    },
+    {
+        "name": "translation",
+        "description": "When the user wants to plan or execute content translation and localization. Also use when the user mentions 'translation workflow,' 'localization,' 'glossary management,' 'multilingual content,' 'human vs machine translation,' or 'market-specific terminology.' For technical hreflang implementation, use page-metadata.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/content/translation/SKILL.md"
+    },
+    {
+        "name": "website-structure",
+        "description": "When the user wants to plan which pages to build, define page priority, or map site hierarchy for SEO and UX. Also use when the user mentions 'website structure,' 'site architecture,' 'page priority,' 'content hierarchy,' 'plan site pages,' or 'SaaS site map planning.' For individual page creation, use the specific page generator skills (e.g., features-page-generator).",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/structure/website-structure/SKILL.md"
+    },
+    {
+        "name": "keyword-research",
+        "description": "When the user wants to find keywords, analyze search intent, or evaluate keyword difficulty. Also use when the user mentions 'keyword research,' 'search intent,' 'search terms,' 'long-tail keywords,' 'keyword clustering,' or 'competitor keywords.' For content planning, use content-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/content/keyword-research/SKILL.md"
+    },
+    {
+        "name": "open-graph",
+        "description": "When the user wants to implement or audit Open Graph tags for social sharing. Also use when the user mentions 'Open Graph,' 'OG tags,' 'social sharing metadata,' 'Facebook preview,' 'LinkedIn preview,' or 'og:image.' For Twitter-specific tags, use twitter-cards.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/open-graph/SKILL.md"
+    },
+    {
+        "name": "twitter-cards",
+        "description": "When the user wants to implement or audit Twitter Card tags for X (Twitter) previews. Also use when the user mentions 'Twitter cards,' 'X cards,' 'Twitter metadata,' or 'X link preview.' For general social metadata, use open-graph.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/twitter-cards/SKILL.md"
+    },
+    {
+        "name": "content-optimization",
+        "description": "When the user wants to optimize content for keywords, word count, heading hierarchy, or readability. Also use when the user mentions 'content optimization,' 'on-page optimization,' 'keyword density,' 'LSI keywords,' 'SEO content audit,' or 'improving existing content.' For content cluster strategy, use content-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/content/content-optimization/SKILL.md"
+    },
+    {
+        "name": "internal-links",
+        "description": "When the user wants to plan or audit internal linking, link equity, or fix orphan pages. Also use when the user mentions 'internal links,' 'link equity,' 'internal linking strategy,' 'anchor text,' 'related posts links,' or 'internal link audit.' For sitewide hierarchy, use website-structure.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/internal-links/SKILL.md"
+    },
+    {
+        "name": "url-structure",
+        "description": "When the user wants to design or optimize URL slugs, hierarchy, or folder structure. Also use when the user mentions 'URL structure,' 'URL slugs,' 'permalink optimization,' 'SaaS URL hierarchy,' or 'clean URLs.' For creating a 3-5 word slug, use url-slug-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/url-structure/SKILL.md"
+    },
+    {
+        "name": "heading-structure",
+        "description": "When the user wants to design or audit heading hierarchy (H1-H6). Also use when the user mentions 'heading structure,' 'H1-H6 hierarchy,' 'content outline,' 'semantic headings,' or 'H1 tag.' For page titles, use title-tag.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/on-page/heading/SKILL.md"
+    },
+    {
+        "name": "xml-sitemap",
+        "description": "When the user wants to create, optimize, or audit sitemap.xml files. Also use when the user mentions 'XML sitemap,' 'sitemap.xml,' 'video sitemap,' 'image sitemap,' 'sitemap indexing,' or 'segmented sitemap.' For robots.txt, use robots-txt.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/technical/sitemap/SKILL.md"
+    },
+    {
+        "name": "canonical-tag",
+        "description": "When the user wants to implement or audit canonical tags to handle duplicate content. Also use when the user mentions 'canonical tag,' 'rel=canonical,' 'duplicate content fix,' or 'preferred URL.' For indexing issues, use indexing.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/technical/canonical/SKILL.md"
+    },
+    {
+        "name": "seo-audit",
+        "description": "When the user wants to conduct an end-to-end SEO audit (technical, on-page, content, off-page). Also use when the user mentions 'SEO audit,' 'SEO checkup,' 'SEO health check,' 'site audit,' or 'comprehensive SEO review.' For setting up a roadmap, use seo-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/strategies/structure/seo-audit/SKILL.md"
+    },
+    {
+        "name": "analytics-tracking",
+        "description": "When the user wants to set up, optimize, or audit product and marketing analytics (GA4, event tracking, conversions). Also use when the user mentions 'analytics tracking,' 'GA4 setup,' 'event tracking,' 'conversion tracking,' 'marketing analytics,' or 'tracking plan.' For dark traffic analysis, use traffic-analysis.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/analytics/tracking/SKILL.md"
+    },
+    {
+        "name": "card",
+        "description": "When the user wants to design, optimize, or audit card layouts for content. Also use when the user mentions 'card design,' 'product card,' 'template card,' 'tool card,' 'feature card,' or 'card grid.' For grid layout, use grid. For list layout, use list.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/components/layout/card/SKILL.md"
+    },
+    {
+        "name": "grid",
+        "description": "When the user wants to design, optimize, or audit grid layouts for content display. Also use when the user mentions 'grid layout,' 'grid design,' 'multi-column grid,' 'CSS grid,' 'responsive grid,' 'card grid,' 'product grid,' or 'feature grid.' For cards layout, use card.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/components/layout/grid/SKILL.md"
+    },
+    {
+        "name": "url-slug-generator",
+        "description": "When the user wants to create or optimize URL slugs for SEO. Also use when the user mentions 'URL slug,' 'slug generator,' 'SEO friendly URL,' 'clean slug,' or 'page slug.' For URL structure and hierarchy, use url-structure.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/components/utility/url-slug/SKILL.md"
+    },
+    {
+        "name": "brand-visual-generator",
+        "description": "When the user wants to define or audit brand visual identity, typography, colors, or spacing. Also use when the user mentions 'brand visual identity,' 'brand colors,' 'typography,' 'brand spacing,' 'design tokens,' or 'visual guidelines.' For brand strategy and voice, use branding.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/components/branding/brand-visual/SKILL.md"
+    },
+    {
+        "name": "alternatives-page-generator",
+        "description": "When the user wants to create, optimize, or audit alternatives or comparison pages. Also use when the user mentions 'alternatives page,' 'competitor alternatives,' 'X vs Y,' 'comparison page,' or 'alternative to [Product].' For programmatic alternatives at scale, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/alternatives/SKILL.md"
+    },
+    {
+        "name": "integrations-page-generator",
+        "description": "When the user wants to create, optimize, or audit integration pages. Also use when the user mentions 'integration page,' 'app integrations,' 'product connections,' 'partner ecosystem,' or '[Product A] + [Product B] integration.' For programmatic integrations at scale, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/integrations/SKILL.md"
+    },
+    {
+        "name": "category-page-generator",
+        "description": "When the user wants to create, optimize, or audit category or listing pages. Also use when the user mentions 'category page,' 'listing page,' 'product category,' 'collection page,' or 'faceted navigation.' For programmatic category pages, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/category-pages/SKILL.md"
+    },
+    {
+        "name": "products-page-generator",
+        "description": "When the user wants to create, optimize, or audit product pages. Also use when the user mentions 'product page,' 'PDP,' 'item page,' or 'product detail page.' For sitewide page planning, use website-structure.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/products/SKILL.md"
+    },
+    {
+        "name": "glossary-page-generator",
+        "description": "When the user wants to create, optimize, or audit glossary or definition pages. Also use when the user mentions 'glossary,' 'definitions page,' 'dictionary,' 'term list,' or 'industry terms.' For programmatic glossary pages, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/glossary/SKILL.md"
+    },
+    {
+        "name": "faq-page-generator",
+        "description": "When the user wants to create, optimize, or audit FAQ pages or sections. Also use when the user mentions 'FAQ page,' 'frequently asked questions,' 'Q&A section,' or 'FAQ schema.' For programmatic FAQ pages, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/faq/SKILL.md"
+    },
+    {
+        "name": "solutions-page-generator",
+        "description": "When the user wants to create, optimize, or audit solutions pages (outcome/industry focused). Also use when the user mentions 'solutions page,' 'outcome-based pages,' 'industry solutions,' or 'company size solutions.' For scenario-focused pages, use use-cases-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/solutions/SKILL.md"
+    },
+    {
+        "name": "migration-page-generator",
+        "description": "When the user wants to create, optimize, or audit migration or switching pages. Also use when the user mentions 'migration page,' 'switching from [X],' 'moving from [X],' or 'import from [X].' For programmatic migration pages, use programmatic-seo.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/marketing/migration/SKILL.md"
+    },
+    {
+        "name": "blog-page-generator",
+        "description": "When the user wants to design, optimize, or audit blog index pages. Also use when the user mentions 'blog index,' 'blog home,' 'article list,' or 'posts feed.' For individual article pages, use article-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/blog/SKILL.md"
+    },
+    {
+        "name": "api-page-generator",
+        "description": "When the user wants to create, optimize, or audit API marketing pages. Also use when the user mentions 'API page,' 'developer portal marketing,' 'API product page,' or 'API capabilities.' For technical API documentation, use docs-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/api/SKILL.md"
+    },
+    {
+        "name": "tiktok-ads",
+        "description": "When the user wants to set up, optimize, or manage TikTok Ads. Also use when the user mentions 'TikTok Ads,' 'TikTok for Business,' 'TikTok Pixel,' 'Events API,' 'TikTok Spark Ads,' or 'TikTok video ads.' For organic TikTok, use tiktok-captions.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/paid-ads/platforms/tiktok-ads/SKILL.md"
+    },
+    {
+        "name": "programmatic-seo",
+        "description": "When the user wants to create SEO pages at scale using templates and data—including AI-assisted, grounded copy for per-URL differentiation (vs rigid mail-merge templates). Also use when the user mentions 'programmatic SEO,' 'programmatic SEO pages,' 'template pages,' 'scale content,' 'location pages,' 'city pages,' 'comparison pages at scale,' 'X vs Y pages,' 'integration pages,' 'pages from data,' 'automated landing pages,' or 'programmatic landing pages.' Uses a playbook matrix aligned to skills under skills/pages. For user-facing template galleries or marketplaces (browse → use), use template-page-generator.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/seo/programmatic-seo/SKILL.md"
+    },
+    {
+        "name": "resources-page-generator",
+        "description": "When the user wants to create, optimize, or audit resources page or content hub. Also use when the user mentions 'resources page,' 'resource center,' 'content hub,' 'learning center,' 'resource library,' 'downloads,' 'templates,' 'guides,' or 'resource hub.' For content hub planning, use content-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/resources/SKILL.md"
+    },
+    {
+        "name": "features-page-generator",
+        "description": "When the user wants to create, optimize, or audit features page content. Also use when the user mentions 'features page,' 'product features,' 'capabilities,' 'what it does,' 'feature list,' 'feature comparison,' 'product capabilities,' or 'features section.' For sitewide page planning, use website-structure.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/pages/content/features/SKILL.md"
+    },
+    {
+        "name": "google-ads",
+        "description": "When the user wants to set up, optimize, or manage Google Ads campaigns (Search, Display, Performance Max). Also use when the user mentions 'Google Ads,' 'AdWords,' 'Quality Score,' 'search ads,' 'display ads,' 'performance max,' 'pmax,' 'keyword bidding,' or 'ad extensions.' For strategy overview, use paid-ads-strategy.",
+        "url": "https://github.com/kostja94/marketing-skills/blob/c409175ac86cb71bfa496e951f723b98a6c32b1f/skills/paid-ads/platforms/google-ads/SKILL.md"
+    }
+]
