@@ -32,7 +32,7 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
     NODE_ENV=production \
-    DATA_DIR_PATH=/app/data
+    DATA_DIR_PATH=/data
 
 WORKDIR /app
 
@@ -50,13 +50,10 @@ COPY --from=builder /app/src/remotion ./src/remotion
 # Static assets (music, etc.)
 COPY static/ ./static/
 
-# Data directory (Cloud Run writable area)
-RUN mkdir -p /app/data/videos /app/data/temp && \
-    chown -R node:node /app/data
-
-# Remotion cache — renderer downloads Chrome Headless Shell here at runtime
-RUN mkdir -p /app/node_modules/.remotion && \
-    chown -R node:node /app/node_modules/.remotion
+# Data directory (VPS volume area)
+RUN mkdir -p /data/videos /data/temp && \
+    mkdir -p /app/node_modules/.cache /app/node_modules/.remotion && \
+    chown -R node:node /data /app/node_modules/.cache /app/node_modules/.remotion
 
 USER node
 

@@ -14,12 +14,12 @@ services:
       - STORAGE_TYPE=${STORAGE_TYPE:-local}
       - GCS_BUCKET=${GCS_BUCKET:-}
       - GCS_KEY_FILE=${GCS_KEY_FILE:-}
-      - DATA_DIR_PATH=/app/data
+      - DATA_DIR_PATH=/data
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - CONCURRENCY=${CONCURRENCY:-1}
       - DOCKER=true
     volumes:
-      - video_data:/app/data
+      - video_data:/data
       # Mount GCS key file if using GCS storage
       # - ./service-account.json:/app/service-account.json:ro
     restart: unless-stopped

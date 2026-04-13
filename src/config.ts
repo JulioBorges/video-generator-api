@@ -17,7 +17,7 @@ const envSchema = z.object({
 
   DATA_DIR_PATH: z.string().default(
     process.env.NODE_ENV === "production"
-      ? "/app/data"
+      ? "/data"
       : path.join(os.homedir(), ".yt-video-generator"),
   ),
   LOG_LEVEL: z.string().default("info"),
