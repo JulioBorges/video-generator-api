@@ -1,6 +1,6 @@
 import path from "path";
 import { bundle } from "@remotion/bundler";
-import { renderMedia, selectComposition, ensureBrowser } from "@remotion/renderer";
+import { renderMedia, selectComposition } from "@remotion/renderer";
 import type { AppConfig } from "../../config";
 import { logger } from "../../logger";
 
@@ -45,7 +45,7 @@ export class RemotionService {
   }
 
   private async _doInit(): Promise<void> {
-    await ensureBrowser();
+    // No need for ensureBrowser() since we use the system Chromium provided by Alpine
     const entryPoint = path.join(
       this.appConfig.packageDirPath,
       "src",
@@ -70,6 +70,10 @@ export class RemotionService {
       serveUrl: this.bundled,
       id: compositionId,
       inputProps: input as unknown as Record<string, unknown>,
+      browserExecutable: process.env.PUPPETEER_EXECUTABLE_PATH,
+      chromiumOptions: {
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      } as any,
     });
 
     const outputLocation = path.join(this.appConfig.videosDirPath, `${videoId}.mp4`);
@@ -81,6 +85,10 @@ export class RemotionService {
       outputLocation,
       inputProps: input as unknown as Record<string, unknown>,
       concurrency: this.appConfig.concurrency,
+      browserExecutable: process.env.PUPPETEER_EXECUTABLE_PATH,
+      chromiumOptions: {
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+      } as any,
       onProgress: ({ progress }) => {
         logger.debug(
           { videoId, progress: Math.floor(progress * 100) },

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build: .
@@ -18,6 +16,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - CONCURRENCY=${CONCURRENCY:-1}
       - DOCKER=true
+    shm_size: "2gb"
     volumes:
       - video_data:/data
       # Mount GCS key file if using GCS storage

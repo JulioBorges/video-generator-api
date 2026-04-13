@@ -1,7 +1,7 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:22-bookworm-slim AS builder
 
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y python3 make g++
 
 WORKDIR /app
 
@@ -14,32 +14,37 @@ COPY src/ ./src/
 RUN NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
 # Production stage
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
 # System dependencies for Remotion + FFmpeg
-RUN apk add --no-cache \
+# Remotion/Chromium dependencies for Debian Bookworm
+RUN apt-get update && apt-get install -y \
     ffmpeg \
     chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    font-noto \
-    && rm -rf /var/cache/apk/*
+    fonts-liberation \
+    fontconfig \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libgbm1 \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     NODE_ENV=production \
     DATA_DIR_PATH=/data
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+RUN apt-get update && apt-get install -y python3 make g++ \
     && npm install --legacy-peer-deps --omit=dev \
-    && apk del .build-deps
+    && apt-get remove -y python3 make g++ \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Compiled JS output
 COPY --from=builder /app/dist ./dist
