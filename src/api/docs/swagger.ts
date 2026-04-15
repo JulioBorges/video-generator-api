@@ -21,18 +21,19 @@ export const openApiSpec = {
     schemas: {
       VideoItem: {
         type: "object",
-        required: ["searchTerm", "type"],
+        required: ["type"],
         properties: {
           searchTerm: { type: "string", example: "artificial intelligence" },
+          imageUrl: { type: "string", format: "uri", example: "https://example.com/image.jpg" },
           type: {
             type: "string",
-            enum: ["video", "image", "animated_text", "formula", "3d_image"],
+            enum: ["image", "animated_text", "formula", "3d_image"],
           },
           displayMode: {
             type: "string",
             enum: ["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"],
           },
-          duration: { type: "number", example: 5000, description: "Duration in ms" },
+          duration: { type: "number", example: 5, description: "Duration in seconds (e.g. 2 for 2s)" },
         },
       },
       SrtStyle: {

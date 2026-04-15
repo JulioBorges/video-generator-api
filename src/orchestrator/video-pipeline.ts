@@ -34,12 +34,45 @@ export class VideoPipeline {
     private jobsRepo: JobsRepository,
     private tts: TTSProvider,
     private imageSearch: MediaSearchProvider,
-    private videoSearch: MediaSearchProvider,
+    private videoSearch: MediaSearchProvider, // Manteve para dependência existente mas inativo
     private musicService: MusicService,
     private ffmpeg: FFmpegService,
     private remotion: RemotionService,
     private storage: StorageService,
   ) {}
+
+  private calculateTimings(items: CreateVideoInput["videoItems"], totalAudioMs: number) {
+    const MIN_DURATION_MS = 2000;
+    
+    // 1. Assign explicit requests
+    let raw = items.map(item => item.duration ? item.duration * 1000 : null);
+    const explicitSum = raw.reduce((a, b) => a! + (b || 0), 0) as number;
+    const missing = raw.filter(x => x === null).length;
+
+    // 2. Check budget remaining for missing
+    const remaining = totalAudioMs - explicitSum;
+
+    if (remaining < missing * MIN_DURATION_MS) {
+       // Escala proporcional: total requested vs total avaiable
+       const totalRequested = explicitSum + (missing * MIN_DURATION_MS);
+       const scale = totalAudioMs / totalRequested;
+       
+       raw = raw.map(v => v === null ? (MIN_DURATION_MS * scale) : (v * scale));
+       
+       // Força limite minimo e estende se for fisicamente impossível
+       raw = raw.map(v => Math.max(v!, MIN_DURATION_MS));
+    } else {
+       const distribute = missing > 0 ? remaining / missing : 0;
+       raw = raw.map(v => v === null ? distribute : v);
+       // Forçar limite novamente para as requests explícitas curtas
+       raw = raw.map(v => Math.max(v!, MIN_DURATION_MS));
+    }
+
+    const finalDurations = raw as number[];
+    const finalTotalMs = finalDurations.reduce((a, b) => a + b, 0);
+
+    return { durationsMs: finalDurations, finalTotalMs: Math.max(totalAudioMs, finalTotalMs) };
+  }
 
   async execute(videoId: string, input: CreateVideoInput): Promise<void> {
     const tempFiles: string[] = [];
@@ -72,14 +105,14 @@ export class VideoPipeline {
       // 3. Search & download media for each video item
       logger.info({ videoId, itemCount: input.videoItems.length }, "Step 3: Media search");
       const orientation = input.config?.orientation ?? "landscape";
-      const durationPerItemS = (ttsResult.durationMs / 1000) / input.videoItems.length;
+      
+      const { durationsMs, finalTotalMs } = this.calculateTimings(input.videoItems, ttsResult.durationMs);
 
       const scenes: ComposedScene[] = await this.buildScenes(
         input,
         captions,
         audioMp3Path,
-        ttsResult.durationMs,
-        durationPerItemS,
+        durationsMs,
         orientation,
         tempFiles,
         videoId,
@@ -102,7 +135,7 @@ export class VideoPipeline {
         voiceover: { url: `http://localhost:${config.port}/tmp/${path.basename(audioMp3Path)}` },
         music: musicTrack,
         config: {
-          durationMs: ttsResult.durationMs + (input.config?.paddingBack ?? 0),
+          durationMs: finalTotalMs + (input.config?.paddingBack ?? 0),
           orientation,
           useSrt: input.useSrt,
           srtStyle: input.srtStyle,
@@ -138,24 +171,25 @@ export class VideoPipeline {
     input: CreateVideoInput,
     captions: Caption[],
     audioMp3Path: string,
-    totalDurationMs: number,
-    durationPerItemS: number,
+    durationsMs: number[],
     orientation: "landscape" | "portrait",
     tempFiles: string[],
     videoId: string,
   ): Promise<ComposedScene[]> {
     const scenes: ComposedScene[] = [];
-    const captionsPerScene = Math.ceil(captions.length / input.videoItems.length);
+    let currentTimeMs = 0;
 
     for (let i = 0; i < input.videoItems.length; i++) {
       const item = input.videoItems[i];
-      const sceneStartMs = Math.floor((i / input.videoItems.length) * totalDurationMs);
-      const sceneEndMs =
-        i === input.videoItems.length - 1
-          ? totalDurationMs
-          : Math.floor(((i + 1) / input.videoItems.length) * totalDurationMs);
-      const sceneDurationMs = sceneEndMs - sceneStartMs;
-      const sceneCaption = captions.slice(i * captionsPerScene, (i + 1) * captionsPerScene);
+      const sceneDurationMs = durationsMs[i];
+      const sceneStartMs = currentTimeMs;
+      const sceneEndMs = sceneStartMs + sceneDurationMs;
+      currentTimeMs = sceneEndMs;
+
+      // Filter captions accurately based on their actual timing bounds
+      const sceneCaption = captions.filter(
+         c => (c.startMs >= sceneStartMs && c.startMs < sceneEndMs) || (c.endMs > sceneStartMs && c.endMs <= sceneEndMs)
+      );
 
       // Build scene media URL
       let media: SceneMedia;
@@ -164,54 +198,41 @@ export class VideoPipeline {
         // Text-based scenes — no external media needed
         media = {
           type: item.type,
-          url: item.searchTerm, // used as content
+          url: item.searchTerm || item.imageUrl || "content", // used as content
           displayMode: item.displayMode,
           duration: sceneDurationMs,
         };
-      } else if (item.type === "image") {
-        // Search for an image via SerpAPI
-        const results = await this.imageSearch.searchImages(item.searchTerm, 5);
-        if (results.length === 0) {
-          throw new Error(`No images found for search term: "${item.searchTerm}"`);
-        }
-        const picked = results[Math.floor(Math.random() * results.length)];
+      } else {
+        // Todo o resto cai na pesquisa padronizada de Imagem
+        // Removemos o provedor de Video (Pexels) por demanda de otimização
+        let imageUrl = item.imageUrl;
+        let imageWidth: number | undefined;
+        let imageHeight: number | undefined;
 
-        // Download image to temp file
+        if (!imageUrl) {
+          const term = item.searchTerm || "background";
+          const results = await this.imageSearch.searchImages(term, 5);
+          if (results.length === 0) {
+            throw new Error(`No images found for search term: "${term}"`);
+          }
+          const picked = results[Math.floor(Math.random() * results.length)];
+          imageUrl = picked.url;
+          imageWidth = picked.width;
+          imageHeight = picked.height;
+        }
+
+        // Download image to temp file (to avoid CORS and cache headlessly)
         const tempImagePath = path.join(config.tempDirPath, `${cuid()}.jpg`);
         tempFiles.push(tempImagePath);
-        await this.downloadFile(picked.url, tempImagePath);
+        await this.downloadFile(imageUrl, tempImagePath);
 
         media = {
           type: "image",
           url: `http://localhost:${config.port}/tmp/${path.basename(tempImagePath)}`,
           displayMode: item.displayMode ?? "ken_burns",
-          width: picked.width,
-          height: picked.height,
+          width: imageWidth,
+          height: imageHeight,
           duration: sceneDurationMs,
-        };
-      } else {
-        // type === "video" — search Pexels for direct MP4 files
-        const results = await this.videoSearch.searchVideos(
-          item.searchTerm,
-          durationPerItemS,
-          orientation,
-        );
-        if (results.length === 0) {
-          throw new Error(`No videos found for search term: "${item.searchTerm}"`);
-        }
-        const picked = results[Math.floor(Math.random() * results.length)];
-
-        // Download video to temp file
-        const tempVideoPath = path.join(config.tempDirPath, `${cuid()}.mp4`);
-        tempFiles.push(tempVideoPath);
-        await this.downloadFile(picked.url, tempVideoPath);
-
-        media = {
-          type: "video",
-          url: `http://localhost:${config.port}/tmp/${path.basename(tempVideoPath)}`,
-          displayMode: item.displayMode ?? "fit",
-          width: picked.width,
-          height: picked.height,
         };
       }
 

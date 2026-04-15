@@ -28,9 +28,11 @@ Starts a video generation pipeline. Returns `videoId` for polling.
   "language": "pt | en",
   "videoItems": [
     {
-      "searchTerm": "string — English keyword for Pexels/SerpAPI media search",
-      "type": "video | image | animated_text | formula | 3d_image",
-      "displayMode": "fit | ken_burns | static | slide | typewriter | fade | reveal (optional)"
+      "searchTerm": "string (optional) — English keyword for SerpAPI media search",
+      "imageUrl": "string (optional) — URL of a direct image to use. If provided, SerpAPI search is skipped.",
+      "type": "image | animated_text | formula | 3d_image",
+      "displayMode": "fit | ken_burns | static | slide | typewriter | fade | reveal (optional)",
+      "duration": "number (optional) — Duration in seconds (e.g. 5). Will fallback proportionally to match TTS."
     }
   ],
   "useSrt": true,
@@ -157,15 +159,15 @@ Map every 1-2 sentences of the script to a `videoItem`. The number of `videoItem
 
 | Content Type | Use `type` | Display Mode | When |
 |-------------|-----------|-------------|------|
-| B-roll footage (nature, city, people) | `video` | `fit` | Default for most narrative scenes |
-| Static visual (diagram, screenshot, product) | `image` | `ken_burns` | When motion from video would distract |
+| Nature, city, abstract concepts | `image` | `ken_burns` | Default for most narrative scenes |
+| Static visual (diagram, screenshot, product) | `image` | `fit` or `static` | When specific items are shown |
 | Title card / key phrase | `animated_text` | `typewriter` or `fade` | Opening hook, key stats, section headers |
 | Math / scientific equation | `formula` | `reveal` | When explaining formulas or equations |
 | 3D render concept | `3d_image` | `static` | Conceptual or futuristic scenes |
 
 **searchTerm Best Practices:**
 
-The `searchTerm` drives Pexels (video) and SerpAPI (image) queries. Quality depends entirely on this field.
+The `searchTerm` drives SerpAPI image queries. Quality depends entirely on this field.
 
 | Rule | Example |
 |------|---------|
@@ -174,14 +176,14 @@ The `searchTerm` drives Pexels (video) and SerpAPI (image) queries. Quality depe
 | **Include quality keywords** | Append `4k`, `cinematic`, `aerial`, `close-up` when relevant |
 | **Avoid abstract concepts** | ✅ `"person thinking cafe laptop"` ❌ `"artificial intelligence concept"` |
 | **Match orientation** | For portrait (Shorts): add `"vertical"`. For landscape: add `"wide"` |
-| **3-6 words max** | Pexels/SerpAPI perform best with concise queries |
+| **3-6 words max** | SerpAPI perform best with concise queries |
 
 **Display Mode Guide:**
 
 | Mode | Visual Effect | Best For |
 |------|--------------|---------|
-| `fit` | Video fills frame (letterbox if needed) | B-roll video clips |
-| `ken_burns` | Slow zoom/pan on static image | Images, photos, charts |
+| `fit` | Image fills frame (letterbox if needed) | Screenshots, charts, full images |
+| `ken_burns` | Slow zoom/pan on static image | Cinematic photos, portraits, landscapes |
 | `static` | No movement | 3D images, diagrams |
 | `slide` | Horizontal slide animation | Before/after, comparison |
 | `typewriter` | Text appears character by character | Titles, quotes, stats |
@@ -252,12 +254,12 @@ Before calling `create-video`, validate the payload:
   "script": "Você sabia que um buraco negro pode comprimir a massa de milhões de sóis em um único ponto? Eles não sugam tudo ao redor como aspiradores cósmicos. Na verdade, um buraco negro distorce o espaço e o tempo de uma forma tão intensa que nem a luz consegue escapar. O primeiro buraco negro foi fotografado em 2019 pelo Event Horizon Telescope. Aquela famosa imagem laranja que você já viu. E o mais impressionante: no centro da nossa galáxia, a Via Láctea, existe um buraco negro supermassivo chamado Sagitário A estrela, com 4 milhões de vezes a massa do Sol. A ciência ainda não sabe o que acontece dentro de um buraco negro. Mas uma coisa é certa: o universo é muito mais estranho do que imaginamos.",
   "language": "pt",
   "videoItems": [
-    { "searchTerm": "black hole space visualization 4k", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "gravitational lensing space effect", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "spacetime distortion animation", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "event horizon telescope black hole photo", "type": "image", "displayMode": "ken_burns" },
-    { "searchTerm": "milky way galaxy center stars", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "deep space nebula stars cinematic", "type": "video", "displayMode": "fit" }
+    { "searchTerm": "black hole space visualization 4k", "type": "image", "displayMode": "ken_burns", "duration": 5 },
+    { "searchTerm": "gravitational lensing space effect", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "spacetime distortion animation", "type": "image", "displayMode": "ken_burns", "duration": 3 },
+    { "searchTerm": "event horizon telescope black hole photo", "type": "image", "displayMode": "fit" },
+    { "searchTerm": "milky way galaxy center stars", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "deep space nebula stars cinematic", "type": "image", "displayMode": "ken_burns" }
   ],
   "useSrt": true,
   "srtStyle": {
@@ -285,11 +287,11 @@ Before calling `create-video`, validate the payload:
   "script": "Your brain doesn't shut off when you sleep. It actually becomes more active during REM sleep than when you're awake. Dreams might be your brain processing emotions and consolidating memories from the day. Some scientists believe dreams are just random neural firings that your brain tries to make sense of. But here's the craziest part. Lucid dreamers can actually control their dreams. Your mind is literally a movie studio that runs every single night.",
   "language": "en",
   "videoItems": [
-    { "searchTerm": "person sleeping bed night close up", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "brain neural activity visualization", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "dreaming surreal clouds floating", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "neurons firing brain scan", "type": "image", "displayMode": "ken_burns" },
-    { "searchTerm": "lucid dreaming surreal landscape", "type": "video", "displayMode": "fit" }
+    { "searchTerm": "person sleeping bed night close up", "type": "image", "displayMode": "ken_burns", "duration": 4 },
+    { "searchTerm": "brain neural activity visualization", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "dreaming surreal clouds floating", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "neurons firing brain scan", "type": "image", "displayMode": "fit" },
+    { "searchTerm": "lucid dreaming surreal landscape", "type": "image", "displayMode": "ken_burns", "duration": 3 }
   ],
   "useSrt": true,
   "srtStyle": {
@@ -318,11 +320,11 @@ Before calling `create-video`, validate the payload:
   "language": "pt",
   "videoItems": [
     { "searchTerm": "E=mc²", "type": "formula", "displayMode": "reveal" },
-    { "searchTerm": "A equação que mudou tudo", "type": "animated_text", "displayMode": "typewriter" },
+    { "searchTerm": "A equação que mudou tudo", "type": "animated_text", "displayMode": "typewriter", "duration": 3 },
     { "searchTerm": "albert einstein portrait vintage", "type": "image", "displayMode": "ken_burns" },
-    { "searchTerm": "particle accelerator physics lab", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "nuclear energy power plant aerial", "type": "video", "displayMode": "fit" },
-    { "searchTerm": "universe stars galaxies cinematic", "type": "video", "displayMode": "fit" }
+    { "searchTerm": "particle accelerator physics lab", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "nuclear energy power plant aerial", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "universe stars galaxies cinematic", "type": "image", "displayMode": "ken_burns", "duration": 5 }
   ],
   "useSrt": true,
   "useBackgroundMusic": true,
@@ -393,7 +395,6 @@ User Request → Script Generation → JSON Assembly → create-video MCP call
                     │ 1. TTS (ElevenLabs)      │ 0-20%
                     │ 2. Subtitles (SRT)       │ 20-30%
                     │ 3. Media Search          │ 30-55%
-                    │    ├─ Pexels (video)     │
                     │    ├─ SerpAPI (image)     │
                     │    └─ Internal (text/formula) │
                     │ 4. Remotion Render       │ 55-90%

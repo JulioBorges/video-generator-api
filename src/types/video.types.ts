@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type VideoStatus = "queued" | "processing" | "ready" | "failed";
 
-export type VideoItemType = "video" | "image" | "animated_text" | "formula" | "3d_image";
+export type VideoItemType = "image" | "animated_text" | "formula" | "3d_image";
 
 export type DisplayMode =
   | "fit"
@@ -34,12 +34,16 @@ export type MusicMood =
   | "funny";
 
 export const videoItemSchema = z.object({
-  searchTerm: z.string().min(1),
-  type: z.enum(["video", "image", "animated_text", "formula", "3d_image"]),
+  searchTerm: z.string().min(1).optional(),
+  imageUrl: z.string().url().optional(),
+  type: z.enum(["image", "animated_text", "formula", "3d_image"]),
   displayMode: z
     .enum(["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"])
     .optional(),
   duration: z.number().positive().optional(),
+}).refine(data => data.searchTerm || data.imageUrl, {
+  message: "Provide either searchTerm (for automatic search) or imageUrl (for explicit image)",
+  path: ["imageUrl"],
 });
 
 export const srtStyleSchema = z.object({

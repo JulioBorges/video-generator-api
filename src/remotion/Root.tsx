@@ -12,8 +12,8 @@ export const RemotionRoot: React.FC = () => {
         component={YouTubeVideo as React.ComponentType<any>}
         durationInFrames={300}
         fps={30}
-        width={1920}
-        height={1080}
+        width={1280}
+        height={720}
         defaultProps={{
           scenes: [],
           voiceover: { url: "" },
@@ -38,8 +38,8 @@ export const RemotionRoot: React.FC = () => {
         component={ShortsVideo as React.ComponentType<any>}
         durationInFrames={300}
         fps={30}
-        width={1080}
-        height={1920}
+        width={720}
+        height={1280}
         defaultProps={{
           scenes: [],
           voiceover: { url: "" },
