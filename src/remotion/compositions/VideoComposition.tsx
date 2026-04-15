@@ -8,7 +8,6 @@ import {
   interpolate,
 } from "remotion";
 import type { SceneMedia, Caption, MusicTrack, SrtStyle } from "../../types/video.types";
-import { VideoScene } from "./scenes/VideoScene";
 import { ImageScene } from "./scenes/ImageScene";
 import { AnimatedTextScene } from "./scenes/AnimatedTextScene";
 import { FormulaScene } from "./scenes/FormulaScene";
@@ -75,7 +74,6 @@ export function VideoComposition({ scenes, voiceover, music, config }: VideoComp
           <Sequence key={i} from={startFrame} durationInFrames={durationFrames}>
             <AbsoluteFill>
               {/* Background media */}
-              {scene.media.type === "video" && <VideoScene media={scene.media} />}
               {scene.media.type === "image" && <ImageScene media={scene.media} durationFrames={durationFrames} />}
               {scene.media.type === "animated_text" && <AnimatedTextScene media={scene.media} />}
               {scene.media.type === "formula" && <FormulaScene media={scene.media} />}
