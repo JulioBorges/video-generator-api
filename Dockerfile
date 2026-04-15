@@ -51,16 +51,15 @@ COPY --from=builder /app/dist ./dist
 
 # Remotion TSX sources — required by @remotion/bundler at runtime
 COPY --from=builder /app/src/remotion ./src/remotion
+COPY --from=builder /app/src/types ./src/types
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Static assets (music, etc.)
 COPY static/ ./static/
 
 # Data directory (VPS volume area)
 RUN mkdir -p /data/videos /data/temp && \
-    mkdir -p /app/node_modules/.cache /app/node_modules/.remotion && \
-    chown -R node:node /data /app/node_modules/.cache /app/node_modules/.remotion
-
-USER node
+    mkdir -p /app/node_modules/.cache /app/node_modules/.remotion
 
 EXPOSE 3000
 
