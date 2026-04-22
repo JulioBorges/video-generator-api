@@ -1,23 +1,19 @@
 // @ts-nocheck
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 import { Router } from "express";
 import cuid from "cuid";
 import type { JobsRepository } from "../db/jobs.repository";
 import type { JobQueue } from "../orchestrator/job-queue";
 import { createVideoSchema } from "../types/video.types";
-import { authMiddleware } from "../api/middleware/auth.middleware";
 import { logger } from "../logger";
 
-export async function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): Promise<Router> {
-  const router = Router();
-
-  const server = new McpServer({
-    name: "video-generator",
-    version: "1.0.0",
-  });
-
+/**
+ * Registers all MCP tools on a given McpServer instance.
+ * Extracted so each SSE session gets its own server with the same tools.
+ */
+function registerTools(server: McpServer, jobsRepo: JobsRepository, jobQueue: JobQueue): void {
   // Tool: create-video
   server.tool(
     "create-video",
@@ -107,21 +103,51 @@ export async function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQue
     }));
     return { content: [{ type: "text", text: JSON.stringify({ videos: jobs }) }] };
   });
+}
 
-  // MCP HTTP transport
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => cuid() });
-  
-  // Connect the server to the transport and wait for it
-  await server.connect(transport);
+export function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): Router {
+  const router = Router();
 
-  // Apply auth middleware to the MCP route
-  router.all("/mcp", (req, res, next) => {
-    authMiddleware(req, res, next);
-  }, async (req, res) => {
+  // Active SSE sessions keyed by sessionId
+  const sessions = new Map<string, SSEServerTransport>();
+
+  // GET /sse — establishes the SSE stream (n8n connects here)
+  router.get("/sse", async (req, res) => {
+    logger.info("MCP SSE connection established");
+
+    const transport = new SSEServerTransport("/messages", res);
+    sessions.set(transport.sessionId, transport);
+
+    // Each SSE connection gets its own McpServer instance
+    const server = new McpServer({
+      name: "video-generator",
+      version: "1.0.0",
+    });
+    registerTools(server, jobsRepo, jobQueue);
+
+    res.on("close", () => {
+      logger.info({ sessionId: transport.sessionId }, "MCP SSE connection closed");
+      sessions.delete(transport.sessionId);
+    });
+
+    await server.connect(transport);
+  });
+
+  // POST /messages?sessionId=xxx — receives JSON-RPC messages from the client
+  router.post("/messages", async (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    const transport = sessions.get(sessionId);
+
+    if (!transport) {
+      logger.warn({ sessionId }, "MCP message for unknown session");
+      res.status(400).json({ error: "Invalid or expired session" });
+      return;
+    }
+
     try {
-      await transport.handleRequest(req, res, req.body);
+      await transport.handlePostMessage(req, res, req.body);
     } catch (err) {
-      logger.error(err, "MCP transport handleRequest error");
+      logger.error(err, "MCP handlePostMessage error");
       if (!res.headersSent) {
         res.status(500).json({ error: "Internal MCP error" });
       }
