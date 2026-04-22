@@ -7,6 +7,7 @@ import cuid from "cuid";
 import type { JobsRepository } from "../db/jobs.repository";
 import type { JobQueue } from "../orchestrator/job-queue";
 import { createVideoSchema } from "../types/video.types";
+import { authMiddleware } from "../api/middleware/auth.middleware";
 import { logger } from "../logger";
 
 export async function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): Promise<Router> {
