@@ -9,7 +9,7 @@ import type { JobQueue } from "../orchestrator/job-queue";
 import { createVideoSchema } from "../types/video.types";
 import { logger } from "../logger";
 
-export function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): Router {
+export async function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): Promise<Router> {
   const router = Router();
 
   const server = new McpServer({
@@ -109,10 +109,22 @@ export function createMcpRouter(jobsRepo: JobsRepository, jobQueue: JobQueue): R
 
   // MCP HTTP transport
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => cuid() });
-  server.connect(transport).catch((err) => logger.error(err, "MCP server connection error"));
+  
+  // Connect the server to the transport and wait for it
+  await server.connect(transport);
 
-  router.all("/mcp", async (req, res) => {
-    await transport.handleRequest(req, res, req.body);
+  // Apply auth middleware to the MCP route
+  router.all("/mcp", (req, res, next) => {
+    authMiddleware(req, res, next);
+  }, async (req, res) => {
+    try {
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      logger.error(err, "MCP transport handleRequest error");
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Internal MCP error" });
+      }
+    }
   });
 
   return router;
