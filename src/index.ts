@@ -63,7 +63,7 @@ async function bootstrap() {
   const app = createApp(jobsRepo, jobQueue, musicService, storage);
 
   // MCP router
-  const mcpRouter = createMcpRouter(jobsRepo, jobQueue);
+  const mcpRouter = createMcpRouter(jobsRepo, jobQueue, musicService, storage);
   app.use("/", mcpRouter);
 
   startServer(app);
