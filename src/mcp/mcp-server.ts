@@ -70,6 +70,10 @@ function registerTools(
         })
         .optional()
         .describe("Video configuration options"),
+      webhookUrl: z
+        .string()
+        .optional()
+        .describe("Optional URL to receive a POST callback when video generation completes or fails. Payload includes event type, videoId, status, and download endpoint."),
     },
     async (params) => {
       const input = createVideoSchema.parse(params);

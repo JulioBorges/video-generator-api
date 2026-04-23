@@ -72,6 +72,12 @@ export const openApiSpec = {
               musicVolume: { type: "string", enum: ["muted", "low", "medium", "high"], default: "medium" },
             },
           },
+          webhookUrl: {
+            type: "string",
+            format: "uri",
+            example: "https://example.com/hooks/video-ready",
+            description: "Optional URL to receive a POST callback when video generation completes or fails. Payload: { event, videoId, status, outputPath?, downloadEndpoint?, error?, timestamp }",
+          },
         },
       },
       VideoStatusResponse: {
@@ -90,6 +96,29 @@ export const openApiSpec = {
         properties: {
           error: { type: "string" },
           message: { type: "string" },
+        },
+      },
+      WebhookCompletedPayload: {
+        type: "object",
+        description: "Payload sent via POST to webhookUrl when video generation succeeds",
+        properties: {
+          event: { type: "string", enum: ["video.completed"], example: "video.completed" },
+          videoId: { type: "string" },
+          status: { type: "string", enum: ["ready"] },
+          outputPath: { type: "string" },
+          downloadEndpoint: { type: "string", example: "/api/videos/{videoId}" },
+          completedAt: { type: "string", format: "date-time" },
+        },
+      },
+      WebhookFailedPayload: {
+        type: "object",
+        description: "Payload sent via POST to webhookUrl when video generation fails",
+        properties: {
+          event: { type: "string", enum: ["video.failed"], example: "video.failed" },
+          videoId: { type: "string" },
+          status: { type: "string", enum: ["failed"] },
+          error: { type: "string" },
+          failedAt: { type: "string", format: "date-time" },
         },
       },
     },

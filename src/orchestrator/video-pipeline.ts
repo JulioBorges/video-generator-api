@@ -155,10 +155,33 @@ export class VideoPipeline {
 
       this.update(videoId, "ready", PROGRESS.STORAGE_DONE, "done", outputPath);
       logger.info({ videoId, outputPath }, "Video generation complete");
+
+      // Webhook notification on success
+      if (input.webhookUrl) {
+        await this.notifyWebhook(input.webhookUrl, {
+          event: "video.completed",
+          videoId,
+          status: "ready",
+          outputPath,
+          downloadEndpoint: `/api/videos/${videoId}`,
+          completedAt: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error({ videoId, err }, "Pipeline error");
       this.jobsRepo.updateStatus(videoId, "failed", 0, "error", undefined, message);
+
+      // Webhook notification on failure
+      if (input.webhookUrl) {
+        await this.notifyWebhook(input.webhookUrl, {
+          event: "video.failed",
+          videoId,
+          status: "failed",
+          error: message,
+          failedAt: new Date().toISOString(),
+        });
+      }
     } finally {
       // Cleanup temp files
       for (const f of tempFiles) {
@@ -267,6 +290,41 @@ export class VideoPipeline {
           reject(err);
         });
     });
+  }
+
+  private async notifyWebhook(webhookUrl: string, payload: Record<string, unknown>): Promise<void> {
+    try {
+      const body = JSON.stringify(payload);
+      const url = new URL(webhookUrl);
+      const protocol = url.protocol === "https:" ? https : http;
+
+      await new Promise<void>((resolve, reject) => {
+        const req = protocol.request(
+          webhookUrl,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Content-Length": Buffer.byteLength(body),
+            },
+            timeout: 10_000,
+          },
+          (res) => {
+            // Drain response to free socket
+            res.resume();
+            res.on("end", resolve);
+          },
+        );
+        req.on("error", reject);
+        req.on("timeout", () => { req.destroy(); reject(new Error("Webhook timeout")); });
+        req.write(body);
+        req.end();
+      });
+
+      logger.info({ webhookUrl, event: payload.event }, "Webhook delivered");
+    } catch (err) {
+      logger.warn({ webhookUrl, err }, "Webhook delivery failed (non-blocking)");
+    }
   }
 
   private update(

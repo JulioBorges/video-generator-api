@@ -84,6 +84,7 @@ export const createVideoSchema = z.object({
     ])
     .optional(),
   config: videoConfigSchema.optional().default({}),
+  webhookUrl: z.string().url("webhookUrl must be a valid URL").optional(),
 });
 
 export type CreateVideoInput = z.infer<typeof createVideoSchema>;
