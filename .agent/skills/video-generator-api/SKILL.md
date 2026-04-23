@@ -1,7 +1,7 @@
 ---
 name: video-generator-api
-description: Ultra-specialized skill for creating YouTube videos via the Video Generator API. Generates optimized JSON payloads for POST /api/videos, crafts SEO-driven scripts with scene-by-scene media composition, and orchestrates the full pipeline via MCP tools (create-video, get-video-status, list-videos). Use when the user asks to create, generate, produce, or render any video.
-version: 2.0.0
+description: Ultra-specialized skill for creating YouTube videos via the Video Generator API. Generates optimized JSON payloads for POST /api/videos, crafts SEO-driven scripts with scene-by-scene media composition, and orchestrates the full pipeline via MCP tools (create-video, get-video-status, list-videos, delete-video, download-video). Use when the user asks to create, generate, produce, or render any video.
+version: 2.1.0
 ---
 
 # Video Generator API — YouTube Video Production Skill
@@ -11,7 +11,7 @@ version: 2.0.0
 Activate this skill when:
 - User asks to "create a video," "generate a video," "make a YouTube video," or "produce a Shorts"
 - User provides a topic, script, or idea for video content
-- User wants to check video rendering progress
+- User wants to check video rendering progress or download a finished video
 - User provides context that implies video creation (e.g., "explain X in video form," "turn this article into a video")
 
 ## MCP Tools Reference
@@ -46,10 +46,11 @@ Starts a video generation pipeline. Returns `videoId` for polling.
   "backgroundMusicStyle": "sad | melancholic | happy | euphoric | excited | chill | uneasy | angry | dark | hopeful | contemplative | funny",
   "config": {
     "orientation": "landscape | portrait (default: landscape)",
-    "voice": "string (ElevenLabs voice ID, optional)",
+    "voice": "string (optional) — ElevenLabs Voice ID OR OpenAI voice name (alloy, echo, fable, onyx, nova, shimmer)",
     "paddingBack": "number ms (default: 1500) — silence after narration ends",
     "musicVolume": "muted | low | medium | high (default: medium)"
-  }
+  },
+  "webhookUrl": "string (optional) — URL for POST callback on completion/failure"
 }
 ```
 
@@ -66,6 +67,20 @@ Polls pipeline progress. Call every 15s after `create-video`.
 ### 3. `list-videos`
 
 Returns all jobs. No input required.
+
+### 4. `download-video`
+
+Returns the download endpoint for a completed video.
+**Input:** `{ "videoId": "cuid_string" }`
+
+### 5. `delete-video`
+
+Removes a job and its generated file.
+**Input:** `{ "videoId": "cuid_string" }`
+
+### 6. `list-music-styles`
+
+Lists available background music moods. No input required.
 
 ---
 
@@ -207,6 +222,13 @@ The `searchTerm` drives SerpAPI image queries. Quality depends entirely on this 
 | Nature / Relaxation | `chill` | `contemplative` |
 | Tutorials / Educational | `chill` | `contemplative` |
 
+**Voice Selection:**
+- The `voice` field is optional. If omitted, the server uses a default based on language.
+- **ElevenLabs**: Use a specific Voice ID (e.g., `pNInz6obpgDQGcFmaJgB`).
+- **OpenAI**: Use a voice name: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`.
+  - Default pt: `onyx` (deep, authoritative)
+  - Default en: `nova` (clear, professional)
+
 **Volume Rules:**
 - Narration-heavy: `musicVolume: "low"` — voice is primary
 - Ambient/visual-heavy: `musicVolume: "medium"` — balanced
@@ -334,6 +356,32 @@ Before calling `create-video`, validate the payload:
     "paddingBack": 2000,
     "musicVolume": "low"
   }
+}
+```
+
+### Example 4: Webhook Integration (Automation)
+
+**User prompt:** "Generate a video about AI ethics and notify my webhook"
+
+```json
+{
+  "script": "Artificial intelligence is changing the world, but it brings serious ethical challenges. How do we ensure algorithms are fair and unbiased? Who is responsible when an AI makes a life-altering decision? Transparency and accountability are no longer optional. As we build smarter machines, we must also build stronger ethical frameworks to protect human rights.",
+  "language": "en",
+  "videoItems": [
+    { "searchTerm": "futuristic robot face cinematic", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "biased algorithms data visualization", "type": "image", "displayMode": "static" },
+    { "searchTerm": "justice scales technology overlay", "type": "image", "displayMode": "ken_burns" },
+    { "searchTerm": "transparent code digital interface", "type": "image", "displayMode": "fit" },
+    { "searchTerm": "human hands touching robot hand", "type": "image", "displayMode": "ken_burns" }
+  ],
+  "useSrt": true,
+  "backgroundMusicStyle": "uneasy",
+  "config": {
+    "orientation": "landscape",
+    "voice": "fable",
+    "musicVolume": "low"
+  },
+  "webhookUrl": "https://hooks.zapier.com/v1/event/12345"
 }
 ```
 

@@ -41,37 +41,51 @@ export class VideoPipeline {
     private storage: StorageService,
   ) {}
 
-  private calculateTimings(items: CreateVideoInput["videoItems"], totalAudioMs: number) {
-    const MIN_DURATION_MS = 2000;
+  private calculateTimings(items: CreateVideoInput["videoItems"], totalAudioMs: number, paddingBackMs: number) {
+    const MIN_DURATION_MS = 1500;
     
-    // 1. Assign explicit requests
-    let raw = items.map(item => item.duration ? item.duration * 1000 : null);
-    const explicitSum = raw.reduce((a, b) => a! + (b || 0), 0) as number;
-    const missing = raw.filter(x => x === null).length;
+    // 1. Get requested durations
+    let rawDurations = items.map(item => item.duration ? item.duration * 1000 : null);
+    const missingCount = rawDurations.filter(x => x === null).length;
+    
+    // Calculate total requested duration
+    let sumRequested = 0;
+    rawDurations.forEach(d => {
+      if (d !== null) sumRequested += d;
+    });
 
-    // 2. Check budget remaining for missing
-    const remaining = totalAudioMs - explicitSum;
-
-    if (remaining < missing * MIN_DURATION_MS) {
-       // Escala proporcional: total requested vs total avaiable
-       const totalRequested = explicitSum + (missing * MIN_DURATION_MS);
-       const scale = totalAudioMs / totalRequested;
-       
-       raw = raw.map(v => v === null ? (MIN_DURATION_MS * scale) : (v * scale));
-       
-       // Força limite minimo e estende se for fisicamente impossível
-       raw = raw.map(v => Math.max(v!, MIN_DURATION_MS));
-    } else {
-       const distribute = missing > 0 ? remaining / missing : 0;
-       raw = raw.map(v => v === null ? distribute : v);
-       // Forçar limite novamente para as requests explícitas curtas
-       raw = raw.map(v => Math.max(v!, MIN_DURATION_MS));
+    if (missingCount > 0) {
+      // If some are missing, fill the gap based on audio length or use a safe default
+      const gap = Math.max(0, totalAudioMs - sumRequested);
+      const perMissing = gap > 0 ? gap / missingCount : Math.max(MIN_DURATION_MS, totalAudioMs / items.length);
+      rawDurations = rawDurations.map(d => d === null ? perMissing : d);
+      sumRequested = rawDurations.reduce((a, b) => a! + b!, 0) as number;
     }
 
-    const finalDurations = raw as number[];
+    // 2. Proportional Redistribution
+    // Ensure the SUM of scene durations matches totalAudioMs exactly before padding
+    const scaleFactor = sumRequested > 0 ? totalAudioMs / sumRequested : 1;
+    
+    // Apply scale and ensure MIN_DURATION
+    let finalDurations = rawDurations.map(d => Math.max(d! * scaleFactor, MIN_DURATION_MS));
+    
+    // 3. Final alignment (Fixing rounding errors or MIN_DURATION overhead)
+    // Adjust the LAST scene to ensure the total is EXACTLY totalAudioMs
+    const currentTotal = finalDurations.reduce((a, b) => a + b, 0);
+    const diff = totalAudioMs - currentTotal;
+    
+    if (finalDurations.length > 0) {
+      finalDurations[finalDurations.length - 1] = Math.max(MIN_DURATION_MS, finalDurations[finalDurations.length - 1] + diff);
+    }
+
+    // 4. Add paddingBack to the LAST scene
+    if (finalDurations.length > 0) {
+      finalDurations[finalDurations.length - 1] += paddingBackMs;
+    }
+
     const finalTotalMs = finalDurations.reduce((a, b) => a + b, 0);
 
-    return { durationsMs: finalDurations, finalTotalMs: Math.max(totalAudioMs, finalTotalMs) };
+    return { durationsMs: finalDurations, finalTotalMs };
   }
 
   async execute(videoId: string, input: CreateVideoInput): Promise<void> {
@@ -105,8 +119,13 @@ export class VideoPipeline {
       // 3. Search & download media for each video item
       logger.info({ videoId, itemCount: input.videoItems.length }, "Step 3: Media search");
       const orientation = input.config?.orientation ?? "landscape";
+      const paddingBackMs = input.config?.paddingBack ?? 1500;
       
-      const { durationsMs, finalTotalMs } = this.calculateTimings(input.videoItems, ttsResult.durationMs);
+      const { durationsMs, finalTotalMs } = this.calculateTimings(
+        input.videoItems, 
+        ttsResult.durationMs,
+        paddingBackMs
+      );
 
       const scenes: ComposedScene[] = await this.buildScenes(
         input,
@@ -135,12 +154,12 @@ export class VideoPipeline {
         voiceover: { url: `http://localhost:${config.port}/tmp/${path.basename(audioMp3Path)}` },
         music: musicTrack,
         config: {
-          durationMs: finalTotalMs + (input.config?.paddingBack ?? 0),
+          durationMs: finalTotalMs,
           orientation,
           useSrt: input.useSrt,
           srtStyle: input.srtStyle,
           musicVolume: input.config?.musicVolume ?? "medium",
-          paddingBack: input.config?.paddingBack ?? 1500,
+          paddingBack: paddingBackMs,
         },
       };
 
