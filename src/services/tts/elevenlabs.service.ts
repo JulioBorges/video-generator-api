@@ -10,28 +10,24 @@ const DEFAULT_VOICES: Record<Language, string> = {
 };
 
 // ElevenLabs model IDs
-const MODELS: Record<Language, string> = {
-  pt: "eleven_multilingual_v2",
-  en: "eleven_monolingual_v1",
-};
+const MODEL = "eleven_flash_v2_5"
 
 export class ElevenLabsService implements TTSProvider {
   private readonly baseUrl = "https://api.elevenlabs.io/v1";
 
-  constructor(private apiKey: string) {}
+  constructor(private apiKey: string) { }
 
   async generate(text: string, language: Language, voice?: string): Promise<TTSResult> {
     const voiceId = voice ?? DEFAULT_VOICES[language];
-    const modelId = MODELS[language];
 
-    logger.debug({ language, voiceId, modelId, textLength: text.length }, "Generating TTS");
+    logger.debug({ language, voiceId, textLength: text.length }, "Generating TTS");
 
     // Generate audio with timestamps
     const response = await axios.post(
       `${this.baseUrl}/text-to-speech/${voiceId}/with-timestamps`,
       {
         text,
-        model_id: modelId,
+        model_id: MODEL,
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.75,

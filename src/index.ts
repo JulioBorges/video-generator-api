@@ -4,7 +4,7 @@ import { config } from "./config";
 import { logger } from "./logger";
 import { getDb } from "./db/sqlite";
 import { JobsRepository } from "./db/jobs.repository";
-import { ElevenLabsService } from "./services/tts/elevenlabs.service";
+import { createTTSProvider } from "./services/tts/tts.factory";
 import { SerpApiService } from "./services/media-search/serpapi.service";
 import { PexelsService } from "./services/media-search/pexels.service";
 import { MusicService } from "./services/music/music.service";
@@ -28,7 +28,8 @@ async function bootstrap() {
   const jobsRepo = new JobsRepository(db);
 
   // Services
-  const tts = new ElevenLabsService(config.elevenLabsApiKey);
+  const tts = createTTSProvider(config);
+  logger.info({ provider: config.ttsProvider }, "TTS provider initialized");
   const imageSearch = new SerpApiService(config.serpApiKey);
   const videoSearch = new PexelsService(config.pexelsApiKey);
   const storage = createStorageService(config);

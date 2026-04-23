@@ -64,7 +64,7 @@ function registerTools(
       config: z
         .object({
           orientation: z.enum(["landscape", "portrait"]).default("landscape").describe("Video orientation"),
-          voice: z.string().optional().describe("ElevenLabs voice ID override"),
+          voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer)."),
           paddingBack: z.number().nonnegative().default(1500).describe("Silence padding at end (ms)"),
           musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium").describe("Background music volume"),
         })
