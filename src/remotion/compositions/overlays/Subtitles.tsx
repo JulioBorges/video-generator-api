@@ -49,7 +49,7 @@ export const Subtitles: React.FC<Props> = ({ captions, style = {} }) => {
             backgroundColor: bgColor,
             color: "#ffffff",
             fontSize,
-            fontFamily,
+            fontFamily: `${fontFamily}, sans-serif`,
             fontWeight: "bold",
             padding: "12px 24px",
             borderRadius: 8,

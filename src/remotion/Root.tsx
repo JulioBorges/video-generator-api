@@ -2,6 +2,16 @@ import React from "react";
 import { Composition, registerRoot } from "remotion";
 import { YouTubeVideo } from "./compositions/YouTubeVideo";
 import { ShortsVideo } from "./compositions/ShortsVideo";
+import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { loadFont as loadRoboto } from "@remotion/google-fonts/Roboto";
+import { loadFont as loadMontserrat } from "@remotion/google-fonts/Montserrat";
+import { loadFont as loadOpenSans } from "@remotion/google-fonts/OpenSans";
+
+// Load common fonts
+loadInter();
+loadRoboto();
+loadMontserrat();
+loadOpenSans();
 
 export const RemotionRoot: React.FC = () => {
   return (
