@@ -8,10 +8,10 @@ import { loadFont as loadMontserrat } from "@remotion/google-fonts/Montserrat";
 import { loadFont as loadOpenSans } from "@remotion/google-fonts/OpenSans";
 
 // Load common fonts
-loadInter();
-loadRoboto();
-loadMontserrat();
-loadOpenSans();
+loadInter(undefined, { ignoreTooManyRequestsWarning: true });
+loadRoboto(undefined, { ignoreTooManyRequestsWarning: true });
+loadMontserrat(undefined, { ignoreTooManyRequestsWarning: true });
+loadOpenSans(undefined, { ignoreTooManyRequestsWarning: true });
 
 export const RemotionRoot: React.FC = () => {
   return (
