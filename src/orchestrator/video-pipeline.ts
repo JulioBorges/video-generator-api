@@ -112,13 +112,26 @@ export class VideoPipeline {
 
       // 2. Build captions from word timestamps
       logger.info({ videoId }, "Step 2: Subtitle generation");
-      const captions: Caption[] = this.subtitleService.buildCaptions(ttsResult.timestamps);
+      const orientation = input.config?.orientation ?? "landscape";
+      const maxLineLength = orientation === "landscape" ? 40 : 20;
+      
+      const wordCaptions: Caption[] = this.subtitleService.buildCaptions(ttsResult.timestamps);
+      const pages = this.subtitleService.createCaptionPages(wordCaptions, maxLineLength);
+      
+      // Map pages back into single Caption objects so the rest of the pipeline renders blocks of text
+      const captions: Caption[] = pages.map(p => {
+        const text = p.lines.map(l => l.texts.map(t => t.text).join(" ")).join("\n");
+        return {
+          text,
+          startMs: p.startMs,
+          endMs: p.endMs,
+        };
+      });
 
       this.update(videoId, "processing", PROGRESS.SUBTITLES_DONE, "media_search");
 
       // 3. Search & download media for each video item
       logger.info({ videoId, itemCount: input.videoItems.length }, "Step 3: Media search");
-      const orientation = input.config?.orientation ?? "landscape";
       const paddingBackMs = input.config?.paddingBack ?? 1500;
       
       const { durationsMs, finalTotalMs } = this.calculateTimings(

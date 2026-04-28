@@ -15,41 +15,102 @@ export class OpenAITTSService implements TTSProvider {
   constructor(private apiKey: string) { }
 
   async generate(text: string, language: Language, voice?: string): Promise<TTSResult> {
-    const voiceName = voice ?? DEFAULT_VOICES[language];
+    const voiceName = (voice ?? DEFAULT_VOICES[language]).toLowerCase();
+    const chunks = this.splitTextIntoChunks(text);
 
-    logger.debug({ language, voice: voiceName, textLength: text.length }, "Generating TTS via OpenAI");
-
-    // 1. Generate speech audio
-    const speechResponse = await axios.post(
-      `${this.baseUrl}/audio/speech`,
-      {
-        model: "gpt-4o-mini-tts",
-        input: text,
-        voice: voiceName,
-        response_format: "mp3",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-        },
-        responseType: "arraybuffer",
-      },
+    logger.debug(
+      { language, voice: voiceName, textLength: text.length, chunks: chunks.length },
+      "Generating TTS via OpenAI",
     );
 
-    const audioBuffer = Buffer.from(speechResponse.data);
+    const audioBuffers: Buffer[] = [];
+    const allTimestamps: WordTimestamp[] = [];
+    let currentOffsetMs = 0;
 
-    // 2. Transcribe with Whisper to get word-level timestamps
-    const timestamps = await this.transcribeForTimestamps(audioBuffer, language);
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      if (chunks.length > 1) {
+        logger.info({ chunkIndex: i + 1, totalChunks: chunks.length }, "Processing TTS chunk");
+      }
 
-    const durationMs =
-      timestamps.length > 0
-        ? timestamps[timestamps.length - 1].endMs
-        : this.estimateDurationMs(text);
+      try {
+        // 1. Generate speech audio for this chunk
+        const speechResponse = await axios.post(
+          `${this.baseUrl}/audio/speech`,
+          {
+            model: "gpt-4o-mini-tts",
+            input: chunk,
+            voice: voiceName,
+            response_format: "mp3",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              "Content-Type": "application/json",
+            },
+            responseType: "arraybuffer",
+          },
+        );
 
-    logger.debug({ durationMs, wordCount: timestamps.length }, "OpenAI TTS generated");
+        const chunkBuffer = Buffer.from(speechResponse.data);
 
-    return { audioBuffer, durationMs, timestamps };
+        // 2. Transcribe chunk with Whisper to get word-level timestamps
+        const chunkTimestamps = await this.transcribeForTimestamps(chunkBuffer, language);
+
+        // 3. Adjust timestamps with the current cumulative offset
+        const adjustedTimestamps = chunkTimestamps.map((t) => ({
+          ...t,
+          startMs: t.startMs + currentOffsetMs,
+          endMs: t.endMs + currentOffsetMs,
+        }));
+
+        audioBuffers.push(chunkBuffer);
+        allTimestamps.push(...adjustedTimestamps);
+
+        // 4. Update offset for next chunk
+        const chunkDurationMs =
+          chunkTimestamps.length > 0
+            ? chunkTimestamps[chunkTimestamps.length - 1].endMs
+            : this.estimateDurationMs(chunk);
+
+        currentOffsetMs += chunkDurationMs;
+      } catch (err: any) {
+        // Error is already logged in a readable way by our new logger serializer
+        const status = err.response?.status;
+        throw new Error(`OpenAI TTS chunk ${i + 1} failed (Status ${status}): ${err.message}`);
+      }
+    }
+
+    const audioBuffer = Buffer.concat(audioBuffers);
+    const durationMs = currentOffsetMs;
+
+    logger.debug({ durationMs, wordCount: allTimestamps.length }, "OpenAI TTS generated (all chunks)");
+
+    return { audioBuffer, durationMs, timestamps: allTimestamps };
+  }
+
+  private splitTextIntoChunks(text: string, maxChars = 3000): string[] {
+    if (text.length <= maxChars) return [text];
+
+    const chunks: string[] = [];
+    // Split by sentences (trying to keep punctuation)
+    const sentences = text.match(/[^.!?]+[.!?]+|\s*[^.!?]+/g) || [text];
+
+    let currentChunk = "";
+    for (const sentence of sentences) {
+      if ((currentChunk + sentence).length > maxChars && currentChunk.length > 0) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        currentChunk += sentence;
+      }
+    }
+
+    if (currentChunk) {
+      chunks.push(currentChunk.trim());
+    }
+
+    return chunks;
   }
 
   private async transcribeForTimestamps(
@@ -102,11 +163,7 @@ export class OpenAITTSService implements TTSProvider {
     }
   }
 
-  /**
-   * Rough fallback: distribute timestamps evenly based on estimated WPM.
-   */
   private estimateTimestamps(durationSec: number): WordTimestamp[] {
-    // Return empty — subtitle service will handle gracefully
     if (durationSec <= 0) return [];
     return [
       {
@@ -117,10 +174,6 @@ export class OpenAITTSService implements TTSProvider {
     ];
   }
 
-  /**
-   * Estimate audio duration from text length when no other data available.
-   * Average speaking rate ~150 WPM → ~2.5 words/sec
-   */
   private estimateDurationMs(text: string): number {
     const wordCount = text.split(/\s+/).length;
     return Math.round((wordCount / 2.5) * 1000);

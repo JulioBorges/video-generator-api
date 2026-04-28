@@ -13,7 +13,7 @@ export class SubtitleService {
     }));
   }
 
-  createCaptionPages(captions: Caption[]): CaptionPage[] {
+  createCaptionPages(captions: Caption[], maxLineLength = 40): CaptionPage[] {
     const pages: CaptionPage[] = [];
     let currentPage: CaptionPage = { startMs: 0, endMs: 0, lines: [] };
     let currentLine: CaptionLine = { texts: [] };
@@ -31,7 +31,7 @@ export class SubtitleService {
       const currentLineText = currentLine.texts.map((t) => t.text).join(" ");
       if (
         currentLine.texts.length > 0 &&
-        currentLineText.length + 1 + caption.text.length > LINE_MAX_LENGTH
+        currentLineText.length + 1 + caption.text.length > maxLineLength
       ) {
         currentPage.lines.push(currentLine);
         currentLine = { texts: [] };

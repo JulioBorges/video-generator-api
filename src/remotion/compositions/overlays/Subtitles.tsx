@@ -40,12 +40,14 @@ export const Subtitles: React.FC<Props> = ({ captions, style = {} }) => {
           right: 0,
           display: "flex",
           justifyContent: "center",
-          padding: "0 60px",
+          padding: "0 40px",
           ...verticalPosition,
         }}
       >
         <span
           style={{
+            display: "inline-block",
+            whiteSpace: "pre-wrap",
             backgroundColor: bgColor,
             color: "#ffffff",
             fontSize,
@@ -55,7 +57,7 @@ export const Subtitles: React.FC<Props> = ({ captions, style = {} }) => {
             borderRadius: 8,
             textAlign: "center",
             lineHeight: 1.4,
-            maxWidth: "80%",
+            maxWidth: "90%",
           }}
         >
           {activeCaption.text}

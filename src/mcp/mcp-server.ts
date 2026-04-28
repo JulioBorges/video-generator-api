@@ -64,7 +64,7 @@ function registerTools(
       config: z
         .object({
           orientation: z.enum(["landscape", "portrait"]).default("landscape").describe("Video orientation"),
-          voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer)."),
+          voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D)."),
           paddingBack: z.number().nonnegative().default(1500).describe("Silence padding at end (ms)"),
           musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium").describe("Background music volume"),
         })

@@ -67,7 +67,12 @@ export const openApiSpec = {
             type: "object",
             properties: {
               orientation: { type: "string", enum: ["landscape", "portrait"], default: "landscape" },
-              voice: { type: "string", example: "pNInz6obpgDQGcFmaJgB", description: "Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer)." },
+              voice: {
+                type: "string",
+                example: "pNInz6obpgDQGcFmaJgB",
+                description:
+                  "Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D).",
+              },
               paddingBack: { type: "number", default: 1500 },
               musicVolume: { type: "string", enum: ["muted", "low", "medium", "high"], default: "medium" },
             },
