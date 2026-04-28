@@ -110,9 +110,9 @@ describe("KokoroTTSService", () => {
       // It will use estimateTimestampsForText which derives time from rawAudioDurationSec
     });
 
-    it("should default to af_bella for pt language if voice is not provided", async () => {
+    it("should default to pm_alex for pt language if voice is not provided", async () => {
       await service.generate("Olá mundo.", "pt");
-      expect(mockKokoroGenerate).toHaveBeenCalledWith("Olá mundo.", { voice: "af_bella" });
+      expect(mockKokoroGenerate).toHaveBeenCalledWith("Olá mundo.", { voice: "pm_alex" });
     });
   });
 });

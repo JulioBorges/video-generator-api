@@ -36,9 +36,9 @@ export class KokoroTTSService implements TTSProvider {
         logger.info("Loading ephone multilingual phonemizer...");
         // Use new Function hack to prevent TS from transpiling dynamic import to require
         // @ts-ignore
-        const { default: createEphone, roa, gmw } = await (new Function('return import("ephone")'))();
-        // Initialize with Romance (roa) and Germanic (gmw) packs to cover PT, EN, ES, FR, IT, DE, NL
-        this.ephoneInstance = await createEphone([roa, gmw]);
+        const { default: createEphone, roa, gmw, en_all } = await (new Function('return import("ephone")'))();
+        // Initialize with Romance (roa), Germanic (gmw) and English (en_all) packs
+        this.ephoneInstance = await createEphone([roa, gmw, en_all]);
         logger.info("ephone phonemizer loaded successfully");
       } catch (err) {
         logger.warn({ err }, "Failed to load ephone phonemizer, falling back to kokoro-js default (English only)");
@@ -92,35 +92,43 @@ export class KokoroTTSService implements TTSProvider {
               throw new Error(`Voice "${voice}" not found. Available: ${Object.keys(patchedVoices).join(", ")}`);
             };
 
-            // PATCH GENERATE TO USE EPHONE
+            // PATCH GENERATE TO USE EPHONE (aligned with PR #313)
             this.ttsInstance.generate = async (text: string, options: any = {}) => {
               const voice = options.voice || "af_heart";
               const voiceMeta = patchedVoices[voice];
               
               if (this.ephoneInstance && voiceMeta) {
                 try {
-                  const lang = voiceMeta.language.charAt(0); // e.g., 'p' for pt-br, 'a' for en-us
-                  const ephoneLang = this.getEphoneLang(lang);
+                  const lang = voice.charAt(0); // voice prefix: 'p' for pt-br, 'a' for en-us
+                  const isEnglish = lang === 'a' || lang === 'b';
+                  const ephoneVoice = this.getEphoneVoice(lang);
                   
-                  logger.debug({ text, voice, ephoneLang }, "Using ephone for phonemization");
+                  logger.debug({ text, voice, lang, ephoneVoice }, "Using ephone for phonemization");
                   
-                  // 1. Normalize text (language aware)
-                  const normalizedText = this.normalizeText(text, ephoneLang);
+                  // 1. Normalize text (English-specific rules only for English)
+                  const normalizedText = this.normalizeText(text, isEnglish);
                   
-                  // 2. Phonemize with ephone
-                  this.ephoneInstance.setVoice(ephoneLang);
-                  const ipa = this.ephoneInstance.textToIpa(normalizedText);
+                  // 2. Split on punctuation, phonemize each segment, rejoin (PR #313 approach)
+                  const sections = this.splitOnPunctuation(normalizedText);
+                  this.ephoneInstance.setVoice(ephoneVoice);
                   
-                  // 3. Post-process IPA for Kokoro
-                  const patchedIpa = this.postProcessIpa(ipa, lang);
+                  const phonemes = sections
+                    .map(({ match, text: t }: { match: boolean; text: string }) => {
+                      if (match) return t; // Keep punctuation as-is
+                      if (!t.trim()) return t;
+                      // ephone appends a trailing "." — strip it
+                      return this.ephoneInstance.textToIpa(t).replace(/\.$/, '').trim();
+                    })
+                    .join('');
                   
-                  // 4. Prepend language prefix (Kokoro expects this for multilingual support)
-                  // For American/British voices, we use 'a' or 'b'. For others, use the prefix.
-                  const finalIpa = lang + patchedIpa;
+                  // 3. Post-process IPA (English-specific gated behind isEnglish)
+                  const finalPhonemes = this.postProcessIpa(phonemes, lang, isEnglish);
                   
-                  // 5. Generate from ids (bypassing internal phonemizer)
-                  logger.info({ finalIpa }, "Kokoro generating from IPA");
-                  const { input_ids } = this.ttsInstance.tokenizer(finalIpa, { truncation: true });
+                  // 4. Generate from ids (bypassing internal phonemizer)
+                  // Prepend language prefix (p for pt, a for en-us, etc.) as required by Kokoro v1.0
+                  const prefixedPhonemes = lang + finalPhonemes;
+                  logger.info({ finalPhonemes: prefixedPhonemes }, "Kokoro generating from IPA with language prefix");
+                  const { input_ids } = this.ttsInstance.tokenizer(prefixedPhonemes, { truncation: true });
                   return this.ttsInstance.generate_from_ids(input_ids, options);
                 } catch (err) {
                   logger.warn({ err }, "ephone generation failed, falling back to original generate");
@@ -144,90 +152,118 @@ export class KokoroTTSService implements TTSProvider {
     return this.ttsInstance;
   }
 
-  private getEphoneLang(kokoroLangPrefix: string): string {
-    // Map Kokoro voice prefix to ephone language codes
+  /**
+   * Map Kokoro voice prefix to ephone voice name.
+   * Matches PR #313 LANG_CONFIG mapping.
+   */
+  private getEphoneVoice(voicePrefix: string): string {
     const map: Record<string, string> = {
-      'a': 'en-us',
-      'b': 'en-gb',
-      'p': 'pt-br',
+      'a': 'en-US',
+      'b': 'en-US',  // Use en-US IPA for both US and UK (Standard practice in Kokoro PR #313)
+      'p': 'pt-BR',
       'e': 'es',
       'f': 'fr',
       'i': 'it',
-      'd': 'de',
-      'n': 'nl',
       'z': 'cmn',
       'j': 'ja',
     };
-    return map[kokoroLangPrefix] || 'en-us';
+    return map[voicePrefix] || 'en-US';
   }
 
-  private normalizeText(text: string, lang: string): string {
-    // Basic normalization
+  /**
+   * Split text on punctuation, preserving delimiters.
+   * Matches the split() + PUNCTUATION_PATTERN from PR #313.
+   */
+  private splitOnPunctuation(text: string): Array<{ match: boolean; text: string }> {
+    const PUNCTUATION = ';:,.!?\u00a1\u00bf\u2014\u2026"\u00ab\u00bb(){}[]';
+    const escaped = PUNCTUATION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`(\\s*[${escaped}]+\\s*)+`, 'g');
+    
+    const result: Array<{ match: boolean; text: string }> = [];
+    let prev = 0;
+    for (const m of text.matchAll(pattern)) {
+      const fullMatch = m[0];
+      if (prev < m.index!) {
+        result.push({ match: false, text: text.slice(prev, m.index!) });
+      }
+      if (fullMatch.length > 0) {
+        result.push({ match: true, text: fullMatch });
+      }
+      prev = m.index! + fullMatch.length;
+    }
+    if (prev < text.length) {
+      result.push({ match: false, text: text.slice(prev) });
+    }
+    return result;
+  }
+
+  /**
+   * Normalize text before phonemization.
+   * Universal normalization always applied; English-specific rules gated behind isEnglish.
+   * Matches normalize_text() from PR #313.
+   */
+  private normalizeText(text: string, isEnglish: boolean): string {
+    // Steps 1-3: Universal normalization
     let normalized = text
-      .replace(/[‘’]/g, "'")
-      .replace(/[“”]/g, '"')
-      .replace(/\(/g, "«")
-      .replace(/\)/g, "»")
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\u00ab/g, '\u201c')
+      .replace(/\u00bb/g, '\u201d')
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/\(/g, '\u00ab')
+      .replace(/\)/g, '\u00bb')
+      .replace(/\u3001/g, ', ')
+      .replace(/\u3002/g, '. ')
+      .replace(/\uff01/g, '! ')
+      .replace(/\uff0c/g, ', ')
+      .replace(/\uff1a/g, ': ')
+      .replace(/\uff1b/g, '; ')
+      .replace(/\uff1f/g, '? ')
+      .replace(/[^\S \n]/g, ' ')
+      .replace(/  +/, ' ')
+      .replace(/(?<=\n) +(?=\n)/g, '')
+      .replace(/\n+/g, ' ')
       .trim();
 
-    if (lang.startsWith('en')) {
-      // English specific normalization (minimal subset of what kokoro-js does)
-      normalized = normalized
-        .replace(/\bD[Rr]\.(?= [A-Z])/g, "Doctor")
-        .replace(/\b(?:Mr\.|MR\.(?= [A-Z]))/g, "Mister")
-        .replace(/\b(?:Ms\.|MS\.(?= [A-Z]))/g, "Miss")
-        .replace(/\b(?:Mrs\.|MRS\.(?= [A-Z]))/g, "Mrs");
-    } else if (lang.startsWith('pt')) {
-      // Portuguese specific normalization
-      normalized = normalized
-        .replace(/\bSr\.\s/g, "Senhor ")
-        .replace(/\bSra\.\s/g, "Senhora ")
-        .replace(/\bDr\.\s/g, "Doutor ")
-        .replace(/\bDra\.\s/g, "Doutora ")
-        .replace(/\bProf\.\s/g, "Professor ")
-        .replace(/\bProfa\.\s/g, "Professora ")
-        .replace(/\bAv\.\s/g, "Avenida ")
-        .replace(/\bcel\.\s/g, "celular ")
-        .replace(/\bex\.:/g, "exemplo:")
-        .replace(/\bVv\.\s/g, "Vocês ");
-    }
+    if (!isEnglish) return normalized;
 
-    return normalized;
+    // Steps 4-7: English-specific normalization
+    return normalized
+      .replace(/\bD[Rr]\.(?= [A-Z])/g, 'Doctor')
+      .replace(/\b(?:Mr\.|MR\.(?= [A-Z]))/g, 'Mister')
+      .replace(/\b(?:Ms\.|MS\.(?= [A-Z]))/g, 'Miss')
+      .replace(/\b(?:Mrs\.|MRS\.(?= [A-Z]))/g, 'Mrs')
+      .replace(/\betc\.(?! [A-Z])/gi, 'etc')
+      .replace(/\b(y)eah?\b/gi, "$1e'a")
+      .replace(/(?<=[BCDFGHJ-NP-TV-Z])'?s\b/g, "'S")
+      .replace(/(?<=X')S\b/g, 's')
+      .replace(/(?:[A-Za-z]\.){2,} [a-z]/g, (m) => m.replace(/\./g, '-'))
+      .replace(/(?<=[A-Z])\.(?=[A-Z])/gi, '-');
   }
 
-  private postProcessIpa(ipa: string, lang: string): string {
-    // Kokoro-specific IPA replacements (Global-ish)
-    let processed = ipa
-      .replace(/kəkˈoːɹoʊ/g, "kˈoʊkəɹoʊ")
-      .replace(/kəkˈɔːɹəʊ/g, "kˈəʊkəɹəʊ")
-      .replace(/ʲ/g, "j")
-      .replace(/ɬ/g, "l")
-      .replace(/(?<=[a-zɹː])(?=hˈʌndɹɪd)/g, " ")
-      .replace(/ z(?=[;:,.!?¡¿—…"«»“” ]|$)/g, "z");
+  /**
+   * Post-process IPA output from ephone for Kokoro consumption.
+   * Only ʲ→j is universal. All other replacements (r→ɹ, x→k, kokoro pronunciation)
+   * are gated behind isEnglish. Non-English phonemes pass through unchanged.
+   * Matches the post-processing logic from PR #313.
+   */
+  private postProcessIpa(ipa: string, lang: string, isEnglish: boolean): string {
+    // Universal: ʲ → j
+    let processed = ipa.replace(/ʲ/g, 'j');
 
-    // Language specific processing
-    if (lang === 'a' || lang === 'b') {
-      // English: Kokoro expects ɹ for r, and k for x (if any)
+    if (isEnglish) {
+      // English-specific post-processing
       processed = processed
-        .replace(/r/g, "ɹ")
-        .replace(/x/g, "k");
+        .replace(/r/g, 'ɹ')                              // eSpeak r → English retroflex ɹ
+        .replace(/kəkˈoːɹoʊ/g, 'kˈoʊkəɹoʊ')             // "kokoro" pronunciation fix (US)
+        .replace(/kəkˈɔːɹəʊ/g, 'kˈəʊkəɹəʊ')             // "kokoro" pronunciation fix (GB)
+        .replace(/x/g, 'k')                               // x → k for English
+        .replace(/ɬ/g, 'l')                               // ɬ → l for English
+        .replace(/(?<=[a-zɹː])(?=hˈʌndɹɪd)/g, ' ')       // space before "hundred"
+        .replace(/ z(?=[;:,.!?¡¿—…"«»"" ]|$)/g, 'z');    // collapse " z" before punctuation
+
       if (lang === 'a') {
-        processed = processed.replace(/(?<=nˈaɪn)ti(?!ː)/g, "di");
+        processed = processed.replace(/(?<=nˈaɪn)ti(?!ː)/g, 'di'); // "ninety" → "ninedy" (AmE)
       }
-    } else if (lang === 'p') {
-      // Portuguese specific: Kokoro vocab has ʁ and ɾ, and uses decomposing tilde for nasals
-      processed = processed
-        // Nasals decomposition (ephone might return precomposed chars)
-        .replace(/ã/g, "a\u0303")
-        .replace(/õ/g, "o\u0303")
-        .replace(/ẽ/g, "e\u0303")
-        .replace(/ĩ/g, "i\u0303")
-        .replace(/ũ/g, "u\u0303")
-        // Mapping ephone 'r' (often used in clusters like 'br', 'gr') to Kokoro's flap 'ɾ'
-        // Kokoro's 'r' (ID 60) is also available but ɾ is common for Portuguese weak R
-        .replace(/r/g, "ɾ"); 
-      
-      // Note: 'x' (ID 66) is kept as is for Portuguese, as it represents the strong R in eSpeak/ephone
     }
 
     return processed.trim();
