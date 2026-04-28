@@ -4,7 +4,7 @@ import { createVideoSchema } from "../../src/types/video.types";
 describe("createVideoSchema validation", () => {
   const validInput = {
     script: "This is a valid script with more than ten characters.",
-    videoItems: [{ searchTerm: "AI robots", type: "video" as const }],
+    videoItems: [{ searchTerm: "AI robots", type: "image" as const }],
   };
 
   it("accepts valid minimal input", () => {
@@ -32,7 +32,7 @@ describe("createVideoSchema validation", () => {
   });
 
   it("accepts all video item types", () => {
-    const types = ["video", "image", "animated_text", "formula", "3d_image"] as const;
+    const types = ["image", "animated_text", "formula", "3d_image"] as const;
     for (const type of types) {
       const result = createVideoSchema.safeParse({
         ...validInput,

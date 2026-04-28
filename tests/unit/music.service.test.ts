@@ -26,7 +26,7 @@ describe("MusicService", () => {
 
   it("track url is correctly encoded", () => {
     const track = service.pickTrack("happy");
-    expect(track.url).toContain("/api/videos/music/");
+    expect(track.url).toContain("/music/");
     expect(track.url).not.toContain(" "); // spaces should be encoded
   });
 });

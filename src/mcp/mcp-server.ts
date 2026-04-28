@@ -29,6 +29,7 @@ function registerTools(
     {
       script: z.string().min(10).describe("The video narration script (min 10 chars)"),
       language: z.enum(["pt", "en"]).default("pt").describe("Script language"),
+      ttsProvider: z.enum(["openai", "elevenlabs", "google", "kokoro"]).default("openai").describe("The TTS provider to use"),
       videoItems: z
         .array(
           z.object({
@@ -64,7 +65,7 @@ function registerTools(
       config: z
         .object({
           orientation: z.enum(["landscape", "portrait"]).default("landscape").describe("Video orientation"),
-          voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D)."),
+          voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D). For Kokoro: voice name (e.g. af_heart, pt_br_voice)."),
           paddingBack: z.number().nonnegative().default(1500).describe("Silence padding at end (ms)"),
           musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium").describe("Background music volume"),
         })

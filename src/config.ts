@@ -7,7 +7,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   API_KEY: z.string().default(""),
 
-  TTS_PROVIDER: z.enum(["elevenlabs", "openai", "google"]).default("elevenlabs"),
+  TTS_PROVIDER: z.enum(["elevenlabs", "openai", "google", "kokoro"]).default("elevenlabs"),
   ELEVENLABS_API_KEY: z.string().default(""),
   OPENAI_API_KEY: z.string().default(""),
   GOOGLE_TTS_KEY_FILE: z.string().optional(),

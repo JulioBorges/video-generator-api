@@ -51,6 +51,7 @@ export const openApiSpec = {
         properties: {
           script: { type: "string", minLength: 10, example: "Neste vídeo vamos aprender sobre IA" },
           language: { type: "string", enum: ["pt", "en"], default: "pt" },
+          ttsProvider: { type: "string", enum: ["openai", "elevenlabs", "google", "kokoro"], default: "openai", description: "The TTS provider to use" },
           videoItems: {
             type: "array",
             items: { $ref: "#/components/schemas/VideoItem" },
@@ -61,7 +62,7 @@ export const openApiSpec = {
           useBackgroundMusic: { type: "boolean", default: true },
           backgroundMusicStyle: {
             type: "string",
-            enum: ["sad","melancholic","happy","euphoric","excited","chill","uneasy","angry","dark","hopeful","contemplative","funny"],
+            enum: ["sad", "melancholic", "happy", "euphoric", "excited", "chill", "uneasy", "angry", "dark", "hopeful", "contemplative", "funny"],
           },
           config: {
             type: "object",
@@ -71,7 +72,7 @@ export const openApiSpec = {
                 type: "string",
                 example: "pNInz6obpgDQGcFmaJgB",
                 description:
-                  "Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D).",
+                  "Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D). For Kokoro: voice name (e.g. af_heart, am_onyx, pf_dora, pm_alex, pm_santa).",
               },
               paddingBack: { type: "number", default: 1500 },
               musicVolume: { type: "string", enum: ["muted", "low", "medium", "high"], default: "medium" },

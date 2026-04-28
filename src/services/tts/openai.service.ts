@@ -119,7 +119,8 @@ export class OpenAITTSService implements TTSProvider {
   ): Promise<WordTimestamp[]> {
     try {
       // Whisper expects a file upload via multipart/form-data
-      const FormData = (await import("form-data")).default;
+      const formModule = await import("form-data");
+      const FormData = formModule.default || formModule;
       const form = new FormData();
 
       form.append("file", audioBuffer, {

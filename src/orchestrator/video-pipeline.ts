@@ -6,6 +6,7 @@ import fs from "fs-extra";
 import type { CreateVideoInput, SceneMedia, ComposedScene, Caption } from "../types/video.types";
 import type { JobsRepository } from "../db/jobs.repository";
 import type { TTSProvider } from "../services/tts/tts.interface";
+import type { TTSFactory } from "../services/tts/tts.factory";
 import type { MediaSearchProvider } from "../services/media-search/media-search.interface";
 import { SubtitleService } from "../services/subtitle/subtitle.service";
 import { MusicService } from "../services/music/music.service";
@@ -32,7 +33,7 @@ export class VideoPipeline {
 
   constructor(
     private jobsRepo: JobsRepository,
-    private tts: TTSProvider,
+    private ttsFactory: TTSFactory,
     private imageSearch: MediaSearchProvider,
     private videoSearch: MediaSearchProvider, // Manteve para dependência existente mas inativo
     private musicService: MusicService,
@@ -90,17 +91,28 @@ export class VideoPipeline {
 
   async execute(videoId: string, input: CreateVideoInput): Promise<void> {
     const tempFiles: string[] = [];
+    const startTime = performance.now();
+    const stageTimes: Record<string, number> = {};
+    let lastStageTime = startTime;
+
+    const recordStage = (stageName: string) => {
+      const now = performance.now();
+      stageTimes[stageName] = Math.round(now - lastStageTime);
+      lastStageTime = now;
+    };
 
     try {
       this.update(videoId, "processing", PROGRESS.TTS_START, "tts_generation");
 
       // 1. Generate TTS audio for the full script
       logger.info({ videoId }, "Step 1: TTS generation");
-      const ttsResult = await this.tts.generate(
+      const tts = this.ttsFactory.getProvider(input.ttsProvider ?? "openai");
+      const ttsResult = await tts.generate(
         input.script,
         input.language,
         input.config?.voice,
       );
+      recordStage("TTS");
 
       // Save audio to temp file
       const tempId = cuid();
@@ -128,6 +140,7 @@ export class VideoPipeline {
         };
       });
 
+      recordStage("Subtitles");
       this.update(videoId, "processing", PROGRESS.SUBTITLES_DONE, "media_search");
 
       // 3. Search & download media for each video item
@@ -150,6 +163,7 @@ export class VideoPipeline {
         videoId,
       );
 
+      recordStage("MediaSearch");
       this.update(videoId, "processing", PROGRESS.MEDIA_DONE, "rendering");
 
       // 4. Compose Remotion render input
@@ -178,6 +192,7 @@ export class VideoPipeline {
 
       const renderedPath = await this.remotion.render(renderInput, videoId);
 
+      recordStage("RemotionRender");
       this.update(videoId, "processing", PROGRESS.RENDER_DONE, "storage");
 
       // 5. Save to storage
@@ -185,8 +200,27 @@ export class VideoPipeline {
       const videoBuffer = await fs.readFile(renderedPath);
       const outputPath = await this.storage.save(videoId, videoBuffer);
 
+      recordStage("Storage");
       this.update(videoId, "ready", PROGRESS.STORAGE_DONE, "done", outputPath);
-      logger.info({ videoId, outputPath }, "Video generation complete");
+      
+      const totalTime = Math.round(performance.now() - startTime);
+      const mem = process.memoryUsage();
+      const cpu = process.cpuUsage();
+      
+      logger.info({ 
+        videoId, 
+        outputPath,
+        telemetry: {
+          totalTimeMs: totalTime,
+          stageTimesMs: stageTimes,
+          memoryUsageMB: {
+            rss: Math.round(mem.rss / 1024 / 1024),
+            heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+            heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+          },
+          cpuUsageMicros: cpu,
+        }
+      }, "Video generation complete and telemetry logged");
 
       // Webhook notification on success
       if (input.webhookUrl) {

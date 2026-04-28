@@ -61,6 +61,7 @@ export const videoConfigSchema = z.object({
 });
 
 export const createVideoSchema = z.object({
+  ttsProvider: z.enum(["openai", "elevenlabs", "google", "kokoro"]).default("openai"),
   script: z.string().min(10, "Script must be at least 10 characters"),
   language: z.enum(["pt", "en"]).default("pt"),
   videoItems: z.array(videoItemSchema).min(1, "At least one video item is required"),
