@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GoogleTTSService } from "../../src/services/tts/google.service";
 
+// Mock fs-extra
+vi.mock("fs-extra", () => ({
+  default: {
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+  },
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  remove: vi.fn().mockResolvedValue(undefined),
+}));
+
 // We need to mock the google cloud TTS library
 const mockSynthesizeSpeech = vi.fn();
 vi.mock("@google-cloud/text-to-speech", () => {
@@ -12,6 +22,10 @@ vi.mock("@google-cloud/text-to-speech", () => {
     },
   };
 });
+
+const mockFFmpeg = {
+  concatAudioFiles: vi.fn().mockResolvedValue(undefined),
+} as any;
 
 describe("GoogleTTSService", () => {
   let service: GoogleTTSService;
@@ -60,7 +74,7 @@ describe("GoogleTTSService", () => {
   });
 
   describe("generate", () => {
-    it("should synthesize speech and return buffer with timestamps", async () => {
+    it("should synthesize speech and return file path with timestamps", async () => {
       mockSynthesizeSpeech.mockResolvedValue([
         {
           audioContent: new Uint8Array([1, 2, 3]),
@@ -71,7 +85,7 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      const result = await service.generate("Hello world", "en");
+      const result = await service.generate("Hello world", "en", undefined, "/tmp/test", mockFFmpeg);
 
       expect(mockSynthesizeSpeech).toHaveBeenCalledWith({
         input: { ssml: expect.stringContaining("<speak>") },
@@ -80,7 +94,8 @@ describe("GoogleTTSService", () => {
         enableTimePointing: [1],
       });
 
-      expect(Buffer.isBuffer(result.audioBuffer)).toBe(true);
+      expect(result.audioFilePath).toContain("tts-");
+      expect(result.audioFilePath).toContain("-final.mp3");
       expect(result.timestamps).toHaveLength(2);
       expect(result.timestamps[0].word).toBe("Hello");
       expect(result.timestamps[0].startMs).toBe(0);
@@ -101,7 +116,7 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      await service.generate("Olá mundo", "pt", "pt-BR-Wavenet-A");
+      await service.generate("Olá mundo", "pt", "pt-BR-Wavenet-A", "/tmp/test", mockFFmpeg);
 
       expect(mockSynthesizeSpeech).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -113,7 +128,7 @@ describe("GoogleTTSService", () => {
     it("should throw an error if no audio content is returned", async () => {
       mockSynthesizeSpeech.mockResolvedValue([{}]);
       
-      await expect(service.generate("Hello", "en")).rejects.toThrow("Google TTS failed for chunk 1: Google TTS returned no audio content");
+      await expect(service.generate("Hello", "en", undefined, "/tmp/test", mockFFmpeg)).rejects.toThrow("Google TTS failed for chunk 1: Google TTS returned no audio content");
     });
     
     it("should process multiple chunks", async () => {
@@ -130,7 +145,7 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      const result = await service.generate("Chunk one Chunk two", "en");
+      const result = await service.generate("Chunk one Chunk two", "en", undefined, "/tmp/test", mockFFmpeg);
       expect(mockSynthesizeSpeech).toHaveBeenCalledTimes(2);
       expect(result.timestamps).toHaveLength(4); // 2 per chunk
     });

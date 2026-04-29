@@ -1,6 +1,10 @@
 import axios from "axios";
+import fs from "fs-extra";
+import path from "path";
+import cuid from "cuid";
 import type { TTSProvider, TTSResult } from "./tts.interface";
 import type { Language, WordTimestamp } from "../../types/video.types";
+import type { FFmpegService } from "../renderer/ffmpeg.service";
 import { logger } from "../../logger";
 
 // ElevenLabs voice IDs for PT/EN
@@ -17,7 +21,7 @@ export class ElevenLabsService implements TTSProvider {
 
   constructor(private apiKey: string) { }
 
-  async generate(text: string, language: Language, voice?: string): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceId = voice ?? DEFAULT_VOICES[language];
 
     logger.debug({ language, voiceId, textLength: text.length }, "Generating TTS");
@@ -55,12 +59,16 @@ export class ElevenLabsService implements TTSProvider {
       const audioBuffer = Buffer.from(audio_base64, "base64");
       const durationMs = (alignment.character_end_times_seconds.at(-1) ?? 0) * 1000;
 
+      // Save audio to disk
+      const audioFilePath = path.join(tempDir, `tts-${cuid()}-final.mp3`);
+      await fs.writeFile(audioFilePath, audioBuffer);
+
       // Build word-level timestamps from character alignment
       const timestamps = this.buildWordTimestamps(alignment);
 
       logger.debug({ durationMs, wordCount: timestamps.length }, "TTS generated");
 
-      return { audioBuffer, durationMs, timestamps };
+      return { audioFilePath, durationMs, timestamps };
     } catch (err: any) {
       const status = err.response?.status;
       const apiMsg = err.response?.data?.detail?.message || err.message;

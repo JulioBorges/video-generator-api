@@ -5,6 +5,20 @@ import axios from "axios";
 // Mock axios
 vi.mock("axios");
 
+// Mock fs-extra
+vi.mock("fs-extra", () => ({
+  default: {
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+  },
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  remove: vi.fn().mockResolvedValue(undefined),
+}));
+
+const mockFFmpeg = {
+  concatAudioFiles: vi.fn().mockResolvedValue(undefined),
+} as any;
+
 describe("OpenAITTSService", () => {
   let service: OpenAITTSService;
 
@@ -49,7 +63,7 @@ describe("OpenAITTSService", () => {
     });
 
     it("should generate TTS and fetch timestamps for a given text", async () => {
-      const result = await service.generate("Hello world.", "en", "alloy");
+      const result = await service.generate("Hello world.", "en", "alloy", "/tmp/test", mockFFmpeg);
 
       // Post should be called twice per chunk: one for /audio/speech, one for /audio/transcriptions
       expect(axios.post).toHaveBeenCalledTimes(2);
@@ -60,8 +74,8 @@ describe("OpenAITTSService", () => {
       expect(result.timestamps[0].startMs).toBe(0);
       expect(result.timestamps[0].endMs).toBe(500);
       
-      expect(Buffer.isBuffer(result.audioBuffer)).toBe(true);
-      expect(result.audioBuffer.length).toBe(240044);
+      expect(result.audioFilePath).toContain("tts-");
+      expect(result.audioFilePath).toContain("-final.mp3");
     });
     
     it("should fallback to estimation if Whisper timestamps fail", async () => {
@@ -77,10 +91,10 @@ describe("OpenAITTSService", () => {
         }
       });
 
-      const result = await service.generate("Hello world.", "en", "alloy");
+      const result = await service.generate("Hello world.", "en", "alloy", "/tmp/test", mockFFmpeg);
 
       // Generates TTS but returns empty timestamps on Whisper failure
-      expect(Buffer.isBuffer(result.audioBuffer)).toBe(true);
+      expect(result.audioFilePath).toContain("-final.mp3");
       expect(result.timestamps.length).toBe(0);
       expect(result.durationMs).toBeGreaterThan(0);
     });

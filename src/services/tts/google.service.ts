@@ -1,6 +1,10 @@
 import { v1beta1 } from "@google-cloud/text-to-speech";
+import fs from "fs-extra";
+import path from "path";
+import cuid from "cuid";
 import type { TTSProvider, TTSResult } from "./tts.interface";
 import type { Language, WordTimestamp } from "../../types/video.types";
+import type { FFmpegService } from "../renderer/ffmpeg.service";
 import { logger } from "../../logger";
 
 const DEFAULT_VOICES: Record<Language, string> = {
@@ -20,11 +24,14 @@ export class GoogleTTSService implements TTSProvider {
   async generate(
     text: string,
     language: Language,
-    voice?: string,
+    voice: string | undefined,
+    tempDir: string,
+    ffmpeg: FFmpegService,
   ): Promise<TTSResult> {
     const voiceName = voice ?? DEFAULT_VOICES[language];
     const languageCode = language === "pt" ? "pt-BR" : "en-US";
     const chunks = this.splitTextIntoChunks(text);
+    const batchId = cuid();
 
     logger.debug(
       {
@@ -36,7 +43,7 @@ export class GoogleTTSService implements TTSProvider {
       "Generating TTS via Google Cloud",
     );
 
-    const audioBuffers: Buffer[] = [];
+    const chunkPaths: string[] = [];
     const allTimestamps: WordTimestamp[] = [];
     let currentOffsetMs = 0;
 
@@ -66,7 +73,12 @@ export class GoogleTTSService implements TTSProvider {
           throw new Error("Google TTS returned no audio content");
         }
 
+        // Save chunk to disk
         const chunkBuffer = Buffer.from(response.audioContent as Uint8Array);
+        const chunkPath = path.join(tempDir, `tts-${batchId}-${String(i).padStart(4, "0")}.mp3`);
+        await fs.writeFile(chunkPath, chunkBuffer);
+        chunkPaths.push(chunkPath);
+
         const chunkTimestamps: WordTimestamp[] = [];
 
         if (response.timepoints && response.timepoints.length > 0) {
@@ -96,7 +108,6 @@ export class GoogleTTSService implements TTSProvider {
           }
         }
 
-        audioBuffers.push(chunkBuffer);
         allTimestamps.push(...chunkTimestamps);
 
         // Update current offset for the next chunk
@@ -114,15 +125,22 @@ export class GoogleTTSService implements TTSProvider {
       }
     }
 
-    const audioBuffer = Buffer.concat(audioBuffers);
-    const durationMs = currentOffsetMs;
+    // Concatenate all chunks into a single MP3 via FFmpeg
+    const audioFilePath = path.join(tempDir, `tts-${batchId}-final.mp3`);
+    await ffmpeg.concatAudioFiles(chunkPaths, audioFilePath);
 
+    // Cleanup individual chunk files
+    for (const p of chunkPaths) {
+      await fs.remove(p).catch(() => {});
+    }
+
+    const durationMs = currentOffsetMs;
     logger.debug(
       { durationMs, wordCount: allTimestamps.length },
       "Google TTS generated (all chunks)",
     );
 
-    return { audioBuffer, durationMs, timestamps: allTimestamps };
+    return { audioFilePath, durationMs, timestamps: allTimestamps };
   }
 
   private buildSSMLWithMarks(text: string): { ssml: string; words: string[] } {

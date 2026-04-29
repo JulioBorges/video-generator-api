@@ -5,10 +5,24 @@ import axios from "axios";
 // Mock axios
 vi.mock("axios");
 
+// Mock fs-extra
+vi.mock("fs-extra", () => ({
+  default: {
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
+  },
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  remove: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mockKokoroGenerate = vi.fn();
 const mockKokoroInstance = {
   generate: mockKokoroGenerate,
 };
+
+const mockFFmpeg = {
+  concatAudioFiles: vi.fn().mockResolvedValue(undefined),
+} as any;
 
 describe("KokoroTTSService", () => {
   let service: KokoroTTSService;
@@ -78,7 +92,7 @@ describe("KokoroTTSService", () => {
     });
 
     it("should generate TTS using Kokoro and Whisper timestamps", async () => {
-      const result = await service.generate("Hello world.", "en", "af_heart");
+      const result = await service.generate("Hello world.", "en", "af_heart", "/tmp/test", mockFFmpeg);
       
       expect(mockKokoroGenerate).toHaveBeenCalledWith("Hello world.", { voice: "af_heart" });
       
@@ -91,15 +105,14 @@ describe("KokoroTTSService", () => {
       expect(result.timestamps[0].startMs).toBe(0);
       expect(result.timestamps[0].endMs).toBe(500);
       
-      expect(Buffer.isBuffer(result.audioBuffer)).toBe(true);
-      // The audioBuffer should have the 44-byte WAV header plus data
-      expect(result.audioBuffer.length).toBeGreaterThan(44);
+      expect(result.audioFilePath).toContain("tts-");
+      expect(result.audioFilePath).toContain("-final.mp3");
     });
 
     it("should fallback to math estimation if no OpenAI key is provided", async () => {
       const serviceWithoutKey = new KokoroTTSService(); // no API key
       vi.spyOn(serviceWithoutKey as any, "getTTSInstance").mockResolvedValue(mockKokoroInstance);
-      const result = await serviceWithoutKey.generate("Hello world.", "en", "af_heart");
+      const result = await serviceWithoutKey.generate("Hello world.", "en", "af_heart", "/tmp/test", mockFFmpeg);
       
       // Whisper should not be called
       expect(axios.post).not.toHaveBeenCalled();
@@ -111,7 +124,7 @@ describe("KokoroTTSService", () => {
     });
 
     it("should default to pm_alex for pt language if voice is not provided", async () => {
-      await service.generate("Olá mundo.", "pt");
+      await service.generate("Olá mundo.", "pt", undefined, "/tmp/test", mockFFmpeg);
       expect(mockKokoroGenerate).toHaveBeenCalledWith("Olá mundo.", { voice: "pm_alex" });
     });
   });

@@ -1,6 +1,10 @@
 import axios from "axios";
+import fs from "fs-extra";
+import path from "path";
+import cuid from "cuid";
 import type { TTSProvider, TTSResult } from "./tts.interface";
 import type { Language, WordTimestamp } from "../../types/video.types";
+import type { FFmpegService } from "../renderer/ffmpeg.service";
 import { logger } from "../../logger";
 
 // OpenAI TTS voices
@@ -14,16 +18,17 @@ export class OpenAITTSService implements TTSProvider {
 
   constructor(private apiKey: string) { }
 
-  async generate(text: string, language: Language, voice?: string): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceName = (voice ?? DEFAULT_VOICES[language]).toLowerCase();
     const chunks = this.splitTextIntoChunks(text);
+    const batchId = cuid();
 
     logger.debug(
       { language, voice: voiceName, textLength: text.length, chunks: chunks.length },
       "Generating TTS via OpenAI",
     );
 
-    const audioBuffers: Buffer[] = [];
+    const chunkPaths: string[] = [];
     const allTimestamps: WordTimestamp[] = [];
     let currentOffsetMs = 0;
 
@@ -52,7 +57,11 @@ export class OpenAITTSService implements TTSProvider {
           },
         );
 
+        // Save chunk to disk
         const chunkBuffer = Buffer.from(speechResponse.data);
+        const chunkPath = path.join(tempDir, `tts-${batchId}-${String(i).padStart(4, "0")}.mp3`);
+        await fs.writeFile(chunkPath, chunkBuffer);
+        chunkPaths.push(chunkPath);
 
         // 2. Transcribe chunk with Whisper to get word-level timestamps
         const chunkTimestamps = await this.transcribeForTimestamps(chunkBuffer, language);
@@ -64,7 +73,6 @@ export class OpenAITTSService implements TTSProvider {
           endMs: t.endMs + currentOffsetMs,
         }));
 
-        audioBuffers.push(chunkBuffer);
         allTimestamps.push(...adjustedTimestamps);
 
         // 4. Update offset for next chunk
@@ -81,12 +89,19 @@ export class OpenAITTSService implements TTSProvider {
       }
     }
 
-    const audioBuffer = Buffer.concat(audioBuffers);
-    const durationMs = currentOffsetMs;
+    // Concatenate all chunks into a single MP3 via FFmpeg
+    const audioFilePath = path.join(tempDir, `tts-${batchId}-final.mp3`);
+    await ffmpeg.concatAudioFiles(chunkPaths, audioFilePath);
 
+    // Cleanup individual chunk files
+    for (const p of chunkPaths) {
+      await fs.remove(p).catch(() => {});
+    }
+
+    const durationMs = currentOffsetMs;
     logger.debug({ durationMs, wordCount: allTimestamps.length }, "OpenAI TTS generated (all chunks)");
 
-    return { audioBuffer, durationMs, timestamps: allTimestamps };
+    return { audioFilePath, durationMs, timestamps: allTimestamps };
   }
 
   private splitTextIntoChunks(text: string, maxChars = 3000): string[] {

@@ -5,7 +5,7 @@ import cuid from "cuid";
 import fs from "fs-extra";
 import type { CreateVideoInput, SceneMedia, ComposedScene, Caption } from "../types/video.types";
 import type { JobsRepository } from "../db/jobs.repository";
-import type { TTSProvider } from "../services/tts/tts.interface";
+
 import type { TTSFactory } from "../services/tts/tts.factory";
 import type { MediaSearchProvider } from "../services/media-search/media-search.interface";
 import { SubtitleService } from "../services/subtitle/subtitle.service";
@@ -111,14 +111,14 @@ export class VideoPipeline {
         input.script,
         input.language,
         input.config?.voice,
+        config.tempDirPath,
+        this.ffmpeg,
       );
       recordStage("TTS");
 
-      // Save audio to temp file
-      const tempId = cuid();
-      const audioMp3Path = path.join(config.tempDirPath, `${tempId}.mp3`);
+      // TTS now returns an MP3 file on disk — use it directly
+      const audioMp3Path = ttsResult.audioFilePath;
       tempFiles.push(audioMp3Path);
-      await this.ffmpeg.saveAsMp3(ttsResult.audioBuffer, audioMp3Path);
 
       this.update(videoId, "processing", PROGRESS.TTS_DONE, "subtitle_generation");
 

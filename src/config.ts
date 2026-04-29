@@ -54,7 +54,13 @@ function loadConfig() {
     if (!env.GCS_KEY_FILE) throw new Error("GCS_KEY_FILE is required when STORAGE_TYPE=gcs");
   }
 
-  const dataDirPath = env.DATA_DIR_PATH;
+  let dataDirPath = env.DATA_DIR_PATH;
+  if (dataDirPath.startsWith("~/")) {
+    dataDirPath = path.join(os.homedir(), dataDirPath.slice(2));
+  } else if (dataDirPath === "~") {
+    dataDirPath = os.homedir();
+  }
+  dataDirPath = path.resolve(dataDirPath);
 
   return {
     port: env.PORT,

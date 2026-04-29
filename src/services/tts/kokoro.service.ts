@@ -1,6 +1,10 @@
 import axios from "axios";
+import fs from "fs-extra";
+import path from "path";
+import cuid from "cuid";
 import type { TTSProvider, TTSResult } from "./tts.interface";
 import type { Language, WordTimestamp } from "../../types/video.types";
+import type { FFmpegService } from "../renderer/ffmpeg.service";
 import { logger } from "../../logger";
 
 // Fallback dynamic import for kokoro-js
@@ -51,13 +55,13 @@ export class KokoroTTSService implements TTSProvider {
         const originalStream = this.ttsInstance.stream.bind(this.ttsInstance);
 
         try {
-          const fs = require("fs");
-          const path = require("path");
+          const fsNode = require("fs");
+          const pathNode = require("path");
           // Path to the voices directory in node_modules
-          const voicesDir = path.join(process.cwd(), "node_modules", "kokoro-js", "voices");
+          const voicesDir = pathNode.join(process.cwd(), "node_modules", "kokoro-js", "voices");
           
-          if (fs.existsSync(voicesDir)) {
-            const files = fs.readdirSync(voicesDir);
+          if (fsNode.existsSync(voicesDir)) {
+            const files = fsNode.readdirSync(voicesDir);
             const extraVoices: any = {};
             
             for (const file of files) {
@@ -269,9 +273,10 @@ export class KokoroTTSService implements TTSProvider {
     return processed.trim();
   }
 
-  async generate(text: string, language: Language, voice?: string): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceName = (voice ?? DEFAULT_VOICES[language]).toLowerCase();
     const chunks = this.splitTextIntoChunks(text);
+    const batchId = cuid();
 
     logger.debug(
       { language, voice: voiceName, textLength: text.length, chunks: chunks.length },
@@ -279,7 +284,7 @@ export class KokoroTTSService implements TTSProvider {
     );
 
     const tts = await this.getTTSInstance();
-    const audioBuffers: Buffer[] = [];
+    const chunkPaths: string[] = [];
     const allTimestamps: WordTimestamp[] = [];
     let currentOffsetMs = 0;
 
@@ -293,8 +298,22 @@ export class KokoroTTSService implements TTSProvider {
         // 1. Generate speech audio for this chunk using Kokoro
         const audio = await tts.generate(chunk, { voice: voiceName });
         
-        // Convert Float32Array to WAV Buffer
+        // Convert Float32Array to WAV and save to disk
         const chunkBuffer = this.encodeWAV(audio.audio, audio.sampling_rate);
+        const chunkPath = path.join(tempDir, `tts-${batchId}-${String(i).padStart(4, "0")}.wav`);
+        await fs.writeFile(chunkPath, chunkBuffer);
+        chunkPaths.push(chunkPath);
+
+        // Detect possible audio truncation
+        const actualDurationSec = audio.audio.length / audio.sampling_rate;
+        const wordCount = chunk.split(/\s+/).length;
+        const expectedMinDurationSec = wordCount / 4; // ~4 words/sec is fast speech
+        if (actualDurationSec < expectedMinDurationSec * 0.6) {
+          logger.warn(
+            { chunkIndex: i + 1, chunkChars: chunk.length, wordCount, actualDurationSec: actualDurationSec.toFixed(1), expectedMinSec: expectedMinDurationSec.toFixed(1) },
+            "Possible Kokoro audio truncation detected — chunk may be too long for the model"
+          );
+        }
 
         // 2. Transcribe chunk with Whisper to get word-level timestamps (fallback to estimation)
         const chunkTimestamps = await this.transcribeForTimestamps(chunkBuffer, chunk, language, audio.sampling_rate);
@@ -306,7 +325,6 @@ export class KokoroTTSService implements TTSProvider {
           endMs: t.endMs + currentOffsetMs,
         }));
 
-        audioBuffers.push(chunkBuffer);
         allTimestamps.push(...adjustedTimestamps);
 
         // 4. Update offset for next chunk
@@ -321,15 +339,22 @@ export class KokoroTTSService implements TTSProvider {
       }
     }
 
-    const audioBuffer = Buffer.concat(audioBuffers);
-    const durationMs = currentOffsetMs;
+    // Concatenate all chunks into a single MP3 via FFmpeg
+    const audioFilePath = path.join(tempDir, `tts-${batchId}-final.mp3`);
+    await ffmpeg.concatAudioFiles(chunkPaths, audioFilePath);
 
+    // Cleanup individual chunk files
+    for (const p of chunkPaths) {
+      await fs.remove(p).catch(() => {});
+    }
+
+    const durationMs = currentOffsetMs;
     logger.debug({ durationMs, wordCount: allTimestamps.length }, "Kokoro TTS generated (all chunks)");
 
-    return { audioBuffer, durationMs, timestamps: allTimestamps };
+    return { audioFilePath, durationMs, timestamps: allTimestamps };
   }
 
-  private splitTextIntoChunks(text: string, maxChars = 500): string[] {
+  private splitTextIntoChunks(text: string, maxChars = 200): string[] {
     if (text.length <= maxChars) return [text];
 
     const chunks: string[] = [];

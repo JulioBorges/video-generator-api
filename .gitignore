@@ -10,4 +10,4 @@ dist/
 !static/music/*.wav
 .DS_Store
 coverage/
-~/.yt-video-generator/
+.yt-video-generator/
