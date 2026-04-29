@@ -7,7 +7,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   API_KEY: z.string().default(""),
 
-  TTS_PROVIDER: z.enum(["elevenlabs", "openai", "google", "kokoro"]).default("elevenlabs"),
+
   ELEVENLABS_API_KEY: z.string().default(""),
   OPENAI_API_KEY: z.string().default(""),
   GOOGLE_TTS_KEY_FILE: z.string().optional(),
@@ -39,24 +39,8 @@ function loadConfig() {
   const env = result.data;
 
   // Warn about missing API keys (don't crash — let the server start for health checks)
-  // Check required TTS key based on selected provider
-  const isGoogle = env.TTS_PROVIDER === "google";
-  const isOpenAI = env.TTS_PROVIDER === "openai";
-  
-  let ttsKey = "ELEVENLABS_API_KEY";
-  let ttsKeyValue = env.ELEVENLABS_API_KEY;
-  
-  if (isOpenAI) {
-    ttsKey = "OPENAI_API_KEY";
-    ttsKeyValue = env.OPENAI_API_KEY;
-  } else if (isGoogle) {
-    ttsKey = "GOOGLE_APPLICATION_CREDENTIALS";
-    ttsKeyValue = env.GOOGLE_TTS_KEY_FILE || process.env.GOOGLE_APPLICATION_CREDENTIALS || "";
-  }
-
   const missingKeys = [
     ["API_KEY", env.API_KEY],
-    [ttsKey, ttsKeyValue],
     ["SERPAPI_KEY", env.SERPAPI_KEY],
     ["PEXELS_API_KEY", env.PEXELS_API_KEY],
   ].filter(([, v]) => !v).map(([k]) => k);
@@ -75,7 +59,6 @@ function loadConfig() {
   return {
     port: env.PORT,
     apiKey: env.API_KEY,
-    ttsProvider: env.TTS_PROVIDER,
     elevenLabsApiKey: env.ELEVENLABS_API_KEY,
     openaiApiKey: env.OPENAI_API_KEY,
     googleTtsKeyFile: env.GOOGLE_TTS_KEY_FILE,
