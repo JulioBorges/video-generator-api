@@ -18,13 +18,14 @@ export class OpenAITTSService implements TTSProvider {
 
   constructor(private apiKey: string) { }
 
-  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, speed: number | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceName = (voice ?? DEFAULT_VOICES[language]).toLowerCase();
+    const voiceSpeed = speed ?? 1.0;
     const chunks = this.splitTextIntoChunks(text);
     const batchId = cuid();
 
     logger.debug(
-      { language, voice: voiceName, textLength: text.length, chunks: chunks.length },
+      { language, voice: voiceName, speed: voiceSpeed, textLength: text.length, chunks: chunks.length },
       "Generating TTS via OpenAI",
     );
 
@@ -47,6 +48,7 @@ export class OpenAITTSService implements TTSProvider {
             input: chunk,
             voice: voiceName,
             response_format: "mp3",
+            speed: voiceSpeed,
           },
           {
             headers: {

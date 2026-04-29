@@ -8,5 +8,5 @@ export interface TTSResult {
 }
 
 export interface TTSProvider {
-  generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult>;
+  generate(text: string, language: Language, voice: string | undefined, speed: number | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult>;
 }

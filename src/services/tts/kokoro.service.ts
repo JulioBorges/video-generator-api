@@ -273,13 +273,14 @@ export class KokoroTTSService implements TTSProvider {
     return processed.trim();
   }
 
-  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, speed: number | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceName = (voice ?? DEFAULT_VOICES[language]).toLowerCase();
+    const voiceSpeed = speed ?? 1.0;
     const chunks = this.splitTextIntoChunks(text);
     const batchId = cuid();
 
     logger.debug(
-      { language, voice: voiceName, textLength: text.length, chunks: chunks.length },
+      { language, voice: voiceName, speed: voiceSpeed, textLength: text.length, chunks: chunks.length },
       "Generating TTS via Kokoro (Local)",
     );
 
@@ -296,7 +297,7 @@ export class KokoroTTSService implements TTSProvider {
 
       try {
         // 1. Generate speech audio for this chunk using Kokoro
-        const audio = await tts.generate(chunk, { voice: voiceName });
+        const audio = await tts.generate(chunk, { voice: voiceName, speed: voiceSpeed });
         
         // Convert Float32Array to WAV and save to disk
         const chunkBuffer = this.encodeWAV(audio.audio, audio.sampling_rate);

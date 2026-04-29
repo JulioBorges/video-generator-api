@@ -56,6 +56,7 @@ export const srtStyleSchema = z.object({
 export const videoConfigSchema = z.object({
   orientation: z.enum(["landscape", "portrait"]).default("landscape"),
   voice: z.string().optional(),
+  voiceSpeed: z.number().min(0.25).max(4.0).default(1.0),
   paddingBack: z.number().nonnegative().default(1500),
   musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium"),
 });

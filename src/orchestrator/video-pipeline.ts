@@ -111,6 +111,7 @@ export class VideoPipeline {
         input.script,
         input.language,
         input.config?.voice,
+        input.config?.voiceSpeed,
         config.tempDirPath,
         this.ffmpeg,
       );

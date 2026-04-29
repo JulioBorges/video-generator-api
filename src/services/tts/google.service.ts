@@ -25,11 +25,13 @@ export class GoogleTTSService implements TTSProvider {
     text: string,
     language: Language,
     voice: string | undefined,
+    speed: number | undefined,
     tempDir: string,
     ffmpeg: FFmpegService,
   ): Promise<TTSResult> {
     const voiceName = voice ?? DEFAULT_VOICES[language];
     const languageCode = language === "pt" ? "pt-BR" : "en-US";
+    const voiceSpeed = speed ?? 1.0;
     const chunks = this.splitTextIntoChunks(text);
     const batchId = cuid();
 
@@ -37,6 +39,7 @@ export class GoogleTTSService implements TTSProvider {
       {
         language,
         voice: voiceName,
+        speed: voiceSpeed,
         textLength: text.length,
         chunks: chunks.length,
       },
@@ -65,7 +68,7 @@ export class GoogleTTSService implements TTSProvider {
         const [response] = await (this.client as any).synthesizeSpeech({
           input: { ssml },
           voice: { name: voiceName, languageCode },
-          audioConfig: { audioEncoding: "MP3" },
+          audioConfig: { audioEncoding: "MP3", speakingRate: voiceSpeed },
           enableTimePointing: [1],
         });
 

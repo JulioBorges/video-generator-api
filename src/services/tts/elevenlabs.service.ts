@@ -21,7 +21,7 @@ export class ElevenLabsService implements TTSProvider {
 
   constructor(private apiKey: string) { }
 
-  async generate(text: string, language: Language, voice: string | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
+  async generate(text: string, language: Language, voice: string | undefined, speed: number | undefined, tempDir: string, ffmpeg: FFmpegService): Promise<TTSResult> {
     const voiceId = voice ?? DEFAULT_VOICES[language];
 
     logger.debug({ language, voiceId, textLength: text.length }, "Generating TTS");

@@ -74,6 +74,13 @@ export const openApiSpec = {
                 description:
                   "Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D). For Kokoro: voice name (e.g. af_heart, am_onyx, pf_dora, pm_alex, pm_santa).",
               },
+              voiceSpeed: {
+                type: "number",
+                default: 1.0,
+                minimum: 0.25,
+                maximum: 4.0,
+                description: "Speaking speed multiplier. Works natively with Kokoro, Google, and OpenAI TTS.",
+              },
               paddingBack: { type: "number", default: 1500 },
               musicVolume: { type: "string", enum: ["muted", "low", "medium", "high"], default: "medium" },
             },
