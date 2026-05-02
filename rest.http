@@ -6,19 +6,20 @@ X-API-Key: your-secret-api-key-here
 {
   "script": "Neste vídeo vamos explorar como a inteligência artificial está revolucionando o mundo moderno. Desde diagnósticos médicos até carros autônomos, a IA já faz parte do nosso cotidiano.",
   "language": "pt",
+  "ttsProvider": "kokoro",
   "videoItems": [
     {
-      "searchTerm": "inteligencia artificial futuro",
-      "type": "video",
-      "displayMode": "fit"
-    },
-    {
-      "searchTerm": "neural network diagram",
+      "imageUrl": "https://images.unsplash.com/photo-1677442136019-21780ecad995",
       "type": "image",
       "displayMode": "ken_burns"
     },
     {
-      "searchTerm": "Inteligência Artificial",
+      "imageUrl": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485",
+      "type": "image",
+      "displayMode": "slide"
+    },
+    {
+      "imageUrl": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e",
       "type": "animated_text",
       "displayMode": "typewriter"
     }
@@ -49,13 +50,15 @@ X-API-Key: your-secret-api-key-here
 {
   "script": "Did you know that E equals mc squared means energy equals mass times the speed of light squared?",
   "language": "en",
+  "ttsProvider": "kokoro",
   "videoItems": [
     {
-      "searchTerm": "physics science laboratory",
-      "type": "video"
+      "imageUrl": "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa",
+      "type": "image",
+      "displayMode": "fit"
     },
     {
-      "searchTerm": "E = mc²",
+      "imageUrl": "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa",
       "type": "formula",
       "displayMode": "reveal"
     }

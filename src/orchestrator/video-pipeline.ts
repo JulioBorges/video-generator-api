@@ -7,7 +7,7 @@ import type { CreateVideoInput, SceneMedia, ComposedScene, Caption } from "../ty
 import type { JobsRepository } from "../db/jobs.repository";
 
 import type { TTSFactory } from "../services/tts/tts.factory";
-import type { MediaSearchProvider } from "../services/media-search/media-search.interface";
+
 import { SubtitleService } from "../services/subtitle/subtitle.service";
 import { MusicService } from "../services/music/music.service";
 import { FFmpegService } from "../services/renderer/ffmpeg.service";
@@ -34,8 +34,6 @@ export class VideoPipeline {
   constructor(
     private jobsRepo: JobsRepository,
     private ttsFactory: TTSFactory,
-    private imageSearch: MediaSearchProvider,
-    private videoSearch: MediaSearchProvider, // Manteve para dependência existente mas inativo
     private musicService: MusicService,
     private ffmpeg: FFmpegService,
     private remotion: RemotionService,
@@ -288,40 +286,30 @@ export class VideoPipeline {
         // Text-based scenes — no external media needed
         media = {
           type: item.type,
-          url: item.searchTerm || item.imageUrl || "content", // used as content
+          url: item.imageUrl || "content",
           displayMode: item.displayMode,
           duration: sceneDurationMs,
         };
       } else {
-        // Todo o resto cai na pesquisa padronizada de Imagem
-        // Removemos o provedor de Video (Pexels) por demanda de otimização
-        let imageUrl = item.imageUrl;
-        let imageWidth: number | undefined;
-        let imageHeight: number | undefined;
-
-        if (!imageUrl) {
-          const term = item.searchTerm || "background";
-          const results = await this.imageSearch.searchImages(term, 5);
-          if (results.length === 0) {
-            throw new Error(`No images found for search term: "${term}"`);
-          }
-          const picked = results[Math.floor(Math.random() * results.length)];
-          imageUrl = picked.url;
-          imageWidth = picked.width;
-          imageHeight = picked.height;
+        // Image scene — imageUrl is required (validated by schema)
+        if (!item.imageUrl) {
+          throw new Error(`imageUrl is required for image scene ${i + 1}`);
         }
 
-        // Download image to temp file (to avoid CORS and cache headlessly)
         const tempImagePath = path.join(config.tempDirPath, `${cuid()}.jpg`);
         tempFiles.push(tempImagePath);
-        await this.downloadFile(imageUrl, tempImagePath);
+
+        try {
+          await this.downloadFile(item.imageUrl, tempImagePath);
+        } catch (err) {
+          logger.error({ url: item.imageUrl, err }, "Image download failed");
+          throw new Error(`Failed to download image for scene ${i + 1}: ${item.imageUrl}`);
+        }
 
         media = {
           type: "image",
           url: `http://localhost:${config.port}/tmp/${path.basename(tempImagePath)}`,
           displayMode: item.displayMode ?? "ken_burns",
-          width: imageWidth,
-          height: imageHeight,
           duration: sceneDurationMs,
         };
       }
@@ -338,24 +326,53 @@ export class VideoPipeline {
     return scenes;
   }
 
-  private downloadFile(url: string, destPath: string): Promise<void> {
+  private downloadFile(url: string, destPath: string, maxRedirects = 5): Promise<void> {
     return new Promise((resolve, reject) => {
-      const fileStream = fs.createWriteStream(destPath);
-      const protocol = url.startsWith("https") ? https : http;
+      const attempt = (currentUrl: string, redirectsLeft: number) => {
+        const protocol = currentUrl.startsWith("https") ? https : http;
+        const options = {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; VideoGeneratorBot/1.0)",
+          },
+        };
 
-      protocol
-        .get(url, (response) => {
-          if (response.statusCode !== 200) {
-            reject(new Error(`Download failed: ${response.statusCode} — ${url}`));
-            return;
-          }
-          response.pipe(fileStream);
-          fileStream.on("finish", () => { fileStream.close(); resolve(); });
-        })
-        .on("error", (err) => {
-          fs.removeSync(destPath);
-          reject(err);
-        });
+        protocol
+          .get(currentUrl, options, (response) => {
+            const statusCode = response.statusCode ?? 0;
+
+            // Follow redirects (301, 302, 307, 308)
+            if ([301, 302, 307, 308].includes(statusCode) && response.headers.location) {
+              response.resume(); // drain response to free socket
+              if (redirectsLeft <= 0) {
+                reject(new Error(`Too many redirects for: ${url}`));
+                return;
+              }
+              const redirectUrl = new URL(response.headers.location, currentUrl).href;
+              attempt(redirectUrl, redirectsLeft - 1);
+              return;
+            }
+
+            if (statusCode !== 200) {
+              response.resume();
+              reject(new Error(`Download failed: ${statusCode} — ${currentUrl}`));
+              return;
+            }
+
+            const fileStream = fs.createWriteStream(destPath);
+            response.pipe(fileStream);
+            fileStream.on("finish", () => { fileStream.close(); resolve(); });
+            fileStream.on("error", (err) => {
+              fs.removeSync(destPath);
+              reject(err);
+            });
+          })
+          .on("error", (err) => {
+            fs.removeSync(destPath);
+            reject(err);
+          });
+      };
+
+      attempt(url, maxRedirects);
     });
   }
 

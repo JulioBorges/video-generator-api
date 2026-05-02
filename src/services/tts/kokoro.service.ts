@@ -129,10 +129,10 @@ export class KokoroTTSService implements TTSProvider {
                   const finalPhonemes = this.postProcessIpa(phonemes, lang, isEnglish);
                   
                   // 4. Generate from ids (bypassing internal phonemizer)
-                  // Prepend language prefix (p for pt, a for en-us, etc.) as required by Kokoro v1.0
-                  const prefixedPhonemes = lang + finalPhonemes;
-                  logger.info({ finalPhonemes: prefixedPhonemes }, "Kokoro generating from IPA with language prefix");
-                  const { input_ids } = this.ttsInstance.tokenizer(prefixedPhonemes, { truncation: true });
+                  // NOTE: Do NOT prepend language prefix — the tokenizer treats each char as a phoneme symbol.
+                  // The original kokoro-js never prefixes language codes into the IPA string.
+                  logger.info({ finalPhonemes }, "Kokoro generating from IPA");
+                  const { input_ids } = this.ttsInstance.tokenizer(finalPhonemes, { truncation: true });
                   return this.ttsInstance.generate_from_ids(input_ids, options);
                 } catch (err) {
                   logger.warn({ err }, "ephone generation failed, falling back to original generate");

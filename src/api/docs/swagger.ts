@@ -4,7 +4,7 @@ export const openApiSpec = {
     title: "Video Generator API",
     version: "1.0.0",
     description:
-      "API for asynchronous generation of YouTube videos from scripts using ElevenLabs TTS, SerpAPI/Pexels media search, and Remotion rendering.",
+      "API for asynchronous generation of YouTube videos from scripts using TTS and Remotion rendering.",
     contact: { name: "API Support" },
   },
   servers: [{ url: "/api", description: "API server" }],
@@ -21,10 +21,9 @@ export const openApiSpec = {
     schemas: {
       VideoItem: {
         type: "object",
-        required: ["type"],
+        required: ["type", "imageUrl"],
         properties: {
-          searchTerm: { type: "string", example: "artificial intelligence" },
-          imageUrl: { type: "string", format: "uri", example: "https://example.com/image.jpg" },
+          imageUrl: { type: "string", format: "uri", example: "https://example.com/image.jpg", description: "Image URL (required for image-type scenes)" },
           type: {
             type: "string",
             enum: ["image", "animated_text", "formula", "3d_image"],

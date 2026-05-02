@@ -5,8 +5,7 @@ import { logger } from "./logger";
 import { getDb } from "./db/sqlite";
 import { JobsRepository } from "./db/jobs.repository";
 import { TTSFactory } from "./services/tts/tts.factory";
-import { SerpApiService } from "./services/media-search/serpapi.service";
-import { PexelsService } from "./services/media-search/pexels.service";
+
 import { MusicService } from "./services/music/music.service";
 import { FFmpegService } from "./services/renderer/ffmpeg.service";
 import { RemotionService } from "./services/renderer/remotion.service";
@@ -30,8 +29,7 @@ async function bootstrap() {
   // Services
   const ttsFactory = new TTSFactory(config);
   logger.info("TTS factory initialized");
-  const imageSearch = new SerpApiService(config.serpApiKey);
-  const videoSearch = new PexelsService(config.pexelsApiKey);
+
   const storage = createStorageService(config);
   const musicService = new MusicService(
     config.musicDirPath,
@@ -51,8 +49,6 @@ async function bootstrap() {
   const pipeline = new VideoPipeline(
     jobsRepo,
     ttsFactory,
-    imageSearch,
-    videoSearch,
     musicService,
     ffmpeg,
     remotion,

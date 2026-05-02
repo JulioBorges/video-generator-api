@@ -33,8 +33,7 @@ function registerTools(
       videoItems: z
         .array(
           z.object({
-            searchTerm: z.string().optional().describe("Search term for automatic image search"),
-            imageUrl: z.string().optional().describe("Explicit image URL (use instead of searchTerm)"),
+            imageUrl: z.string().describe("Image URL (required for image-type scenes)"),
             type: z
               .enum(["image", "animated_text", "formula", "3d_image"])
               .describe("Type of scene"),
@@ -46,7 +45,7 @@ function registerTools(
           }),
         )
         .min(1)
-        .describe("List of scene items (each needs searchTerm OR imageUrl)"),
+        .describe("List of scene items (imageUrl required for image scenes)"),
       useSrt: z.boolean().default(true).describe("Burn subtitles into video"),
       srtStyle: z
         .object({

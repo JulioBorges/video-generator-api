@@ -34,15 +34,14 @@ export type MusicMood =
   | "funny";
 
 export const videoItemSchema = z.object({
-  searchTerm: z.string().min(1).optional(),
   imageUrl: z.string().url().optional(),
   type: z.enum(["image", "animated_text", "formula", "3d_image"]),
   displayMode: z
     .enum(["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"])
     .optional(),
   duration: z.number().positive().optional(),
-}).refine(data => data.searchTerm || data.imageUrl, {
-  message: "Provide either searchTerm (for automatic search) or imageUrl (for explicit image)",
+}).refine(data => data.type !== "image" || !!data.imageUrl, {
+  message: "imageUrl is required for image-type scenes",
   path: ["imageUrl"],
 });
 

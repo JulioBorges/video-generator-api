@@ -13,7 +13,7 @@ export const AnimatedTextScene: React.FC<Props> = ({ media }) => {
   const opacity = interpolate(frame, [0, fps * 0.5], [0, 1], { extrapolateRight: "clamp" });
 
   // Typewriter effect: reveal characters
-  const text = media.url; // searchTerm used as text content
+  const text = media.url; // imageUrl or fallback content used as text
   const totalChars = text.length;
   const charsPerFrame = totalChars / (fps * 1.5); // reveal over 1.5s
   const visibleChars = mode === "typewriter" ? Math.floor(frame * charsPerFrame) : totalChars;
