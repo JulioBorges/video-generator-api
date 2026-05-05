@@ -19,9 +19,9 @@ export const openApiSpec = {
       },
     },
     schemas: {
-      VideoItem: {
+      SceneItem: {
         type: "object",
-        required: ["type", "imageUrl"],
+        required: ["type"],
         properties: {
           imageUrl: { type: "string", format: "uri", example: "https://example.com/image.jpg", description: "Image URL (required for image-type scenes)" },
           type: {
@@ -32,7 +32,8 @@ export const openApiSpec = {
             type: "string",
             enum: ["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"],
           },
-          duration: { type: "number", example: 5, description: "Duration in seconds (e.g. 2 for 2s)" },
+          duration: { type: "number", example: 5, description: "Duration in seconds. Required if sceneNarration is empty." },
+          sceneNarration: { type: "string", example: "Bem-vindos a este vídeo incrível.", description: "Narration for this specific scene. The scene length will match the audio duration." },
         },
       },
       SrtStyle: {
@@ -46,22 +47,14 @@ export const openApiSpec = {
       },
       CreateVideoRequest: {
         type: "object",
-        required: ["script", "videoItems"],
+        required: ["sceneItems"],
         properties: {
-          script: { type: "string", minLength: 10, example: "Neste vídeo vamos aprender sobre IA" },
           language: { type: "string", enum: ["pt", "en"], default: "pt" },
           ttsProvider: { type: "string", enum: ["openai", "elevenlabs", "google", "kokoro"], default: "openai", description: "The TTS provider to use" },
-          videoItems: {
+          sceneItems: {
             type: "array",
-            items: { $ref: "#/components/schemas/VideoItem" },
+            items: { $ref: "#/components/schemas/SceneItem" },
             minItems: 1,
-          },
-          useSrt: { type: "boolean", default: true },
-          srtStyle: { $ref: "#/components/schemas/SrtStyle" },
-          useBackgroundMusic: { type: "boolean", default: true },
-          backgroundMusicStyle: {
-            type: "string",
-            enum: ["sad", "melancholic", "happy", "euphoric", "excited", "chill", "uneasy", "angry", "dark", "hopeful", "contemplative", "funny"],
           },
           config: {
             type: "object",
@@ -82,6 +75,14 @@ export const openApiSpec = {
               },
               paddingBack: { type: "number", default: 1500 },
               musicVolume: { type: "string", enum: ["muted", "low", "medium", "high"], default: "medium" },
+              useSrt: { type: "boolean", default: true },
+              srtStyle: { $ref: "#/components/schemas/SrtStyle" },
+              useBackgroundMusic: { type: "boolean", default: true },
+              backgroundMusicStyle: {
+                type: "string",
+                enum: ["sad", "melancholic", "happy", "euphoric", "excited", "chill", "uneasy", "angry", "dark", "hopeful", "contemplative", "funny"],
+              },
+              backgroundMusicUrl: { type: "string", format: "uri", description: "Optional URL to an external audio file to use as background music." },
             },
           },
           webhookUrl: {

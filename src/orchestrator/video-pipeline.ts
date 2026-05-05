@@ -40,52 +40,6 @@ export class VideoPipeline {
     private storage: StorageService,
   ) {}
 
-  private calculateTimings(items: CreateVideoInput["videoItems"], totalAudioMs: number, paddingBackMs: number) {
-    const MIN_DURATION_MS = 1500;
-    
-    // 1. Get requested durations
-    let rawDurations = items.map(item => item.duration ? item.duration * 1000 : null);
-    const missingCount = rawDurations.filter(x => x === null).length;
-    
-    // Calculate total requested duration
-    let sumRequested = 0;
-    rawDurations.forEach(d => {
-      if (d !== null) sumRequested += d;
-    });
-
-    if (missingCount > 0) {
-      // If some are missing, fill the gap based on audio length or use a safe default
-      const gap = Math.max(0, totalAudioMs - sumRequested);
-      const perMissing = gap > 0 ? gap / missingCount : Math.max(MIN_DURATION_MS, totalAudioMs / items.length);
-      rawDurations = rawDurations.map(d => d === null ? perMissing : d);
-      sumRequested = rawDurations.reduce((a, b) => a! + b!, 0) as number;
-    }
-
-    // 2. Proportional Redistribution
-    // Ensure the SUM of scene durations matches totalAudioMs exactly before padding
-    const scaleFactor = sumRequested > 0 ? totalAudioMs / sumRequested : 1;
-    
-    // Apply scale and ensure MIN_DURATION
-    let finalDurations = rawDurations.map(d => Math.max(d! * scaleFactor, MIN_DURATION_MS));
-    
-    // 3. Final alignment (Fixing rounding errors or MIN_DURATION overhead)
-    // Adjust the LAST scene to ensure the total is EXACTLY totalAudioMs
-    const currentTotal = finalDurations.reduce((a, b) => a + b, 0);
-    const diff = totalAudioMs - currentTotal;
-    
-    if (finalDurations.length > 0) {
-      finalDurations[finalDurations.length - 1] = Math.max(MIN_DURATION_MS, finalDurations[finalDurations.length - 1] + diff);
-    }
-
-    // 4. Add paddingBack to the LAST scene
-    if (finalDurations.length > 0) {
-      finalDurations[finalDurations.length - 1] += paddingBackMs;
-    }
-
-    const finalTotalMs = finalDurations.reduce((a, b) => a + b, 0);
-
-    return { durationsMs: finalDurations, finalTotalMs };
-  }
 
   async execute(videoId: string, input: CreateVideoInput): Promise<void> {
     const tempFiles: string[] = [];
@@ -100,90 +54,136 @@ export class VideoPipeline {
     };
 
     try {
-      this.update(videoId, "processing", PROGRESS.TTS_START, "tts_generation");
+      this.update(videoId, "processing", PROGRESS.TTS_START, "scene_processing");
 
-      // 1. Generate TTS audio for the full script
-      logger.info({ videoId }, "Step 1: TTS generation");
-      const tts = this.ttsFactory.getProvider(input.ttsProvider ?? "openai");
-      const ttsResult = await tts.generate(
-        input.script,
-        input.language,
-        input.config?.voice,
-        input.config?.voiceSpeed,
-        config.tempDirPath,
-        this.ffmpeg,
-      );
-      recordStage("TTS");
-
-      // TTS now returns an MP3 file on disk — use it directly
-      const audioMp3Path = ttsResult.audioFilePath;
-      tempFiles.push(audioMp3Path);
-
-      this.update(videoId, "processing", PROGRESS.TTS_DONE, "subtitle_generation");
-
-      // 2. Build captions from word timestamps
-      logger.info({ videoId }, "Step 2: Subtitle generation");
+      logger.info({ videoId, itemCount: input.sceneItems.length }, "Step 1 & 2: Scene processing (TTS + Media)");
       const orientation = input.config?.orientation ?? "landscape";
       const maxLineLength = orientation === "landscape" ? 40 : 20;
-      
-      const wordCaptions: Caption[] = this.subtitleService.buildCaptions(ttsResult.timestamps);
-      const pages = this.subtitleService.createCaptionPages(wordCaptions, maxLineLength);
-      
-      // Map pages back into single Caption objects so the rest of the pipeline renders blocks of text
-      const captions: Caption[] = pages.map(p => {
-        const text = p.lines.map(l => l.texts.map(t => t.text).join(" ")).join("\n");
-        return {
-          text,
-          startMs: p.startMs,
-          endMs: p.endMs,
-        };
-      });
-
-      recordStage("Subtitles");
-      this.update(videoId, "processing", PROGRESS.SUBTITLES_DONE, "media_search");
-
-      // 3. Search & download media for each video item
-      logger.info({ videoId, itemCount: input.videoItems.length }, "Step 3: Media search");
+      const tts = this.ttsFactory.getProvider(input.ttsProvider ?? "openai");
       const paddingBackMs = input.config?.paddingBack ?? 1500;
       
-      const { durationsMs, finalTotalMs } = this.calculateTimings(
-        input.videoItems, 
-        ttsResult.durationMs,
-        paddingBackMs
-      );
+      let finalTotalMs = 0;
+      const scenes: ComposedScene[] = [];
 
-      const scenes: ComposedScene[] = await this.buildScenes(
-        input,
-        captions,
-        audioMp3Path,
-        durationsMs,
-        orientation,
-        tempFiles,
-        videoId,
-      );
+      for (let i = 0; i < input.sceneItems.length; i++) {
+        const item = input.sceneItems[i];
+        let sceneDurationMs = 0;
+        let captions: Caption[] = [];
+        let audioUrl: string | undefined = undefined;
 
-      recordStage("MediaSearch");
+        // --- Audio & Subtitles ---
+        if (item.sceneNarration) {
+          const ttsResult = await tts.generate(
+            item.sceneNarration,
+            input.language,
+            input.config?.voice,
+            input.config?.voiceSpeed,
+            config.tempDirPath,
+            this.ffmpeg,
+          );
+          
+          sceneDurationMs = ttsResult.durationMs + 300; // Add small buffer to prevent audio cut at the end of scenes
+          audioUrl = `http://127.0.0.1:${config.port}/tmp/${path.basename(ttsResult.audioFilePath)}`;
+          tempFiles.push(ttsResult.audioFilePath);
+
+          const wordCaptions = this.subtitleService.buildCaptions(ttsResult.timestamps);
+          const pages = this.subtitleService.createCaptionPages(wordCaptions, maxLineLength);
+          
+          captions = pages.map(p => {
+            const text = p.lines.map(l => l.texts.map(t => t.text).join(" ")).join("\n");
+            return {
+              text,
+              startMs: p.startMs,
+              endMs: p.endMs,
+            };
+          });
+        } else {
+          // Duration is required if sceneNarration is empty
+          sceneDurationMs = (item.duration || 2) * 1000;
+        }
+
+        // Add padding back to the last scene
+        if (i === input.sceneItems.length - 1) {
+          sceneDurationMs += paddingBackMs;
+        }
+
+        finalTotalMs += sceneDurationMs;
+
+        // --- Media ---
+        let media: SceneMedia;
+
+        if (item.type === "animated_text" || item.type === "formula" || item.type === "3d_image") {
+          media = {
+            type: item.type,
+            url: item.imageUrl || "content",
+            displayMode: item.displayMode,
+            duration: sceneDurationMs,
+          };
+        } else {
+          if (!item.imageUrl) {
+            throw new Error(`imageUrl is required for image scene ${i + 1}`);
+          }
+
+          const tempImagePath = path.join(config.tempDirPath, `${cuid()}.jpg`);
+          tempFiles.push(tempImagePath);
+
+          try {
+            await this.downloadFile(item.imageUrl, tempImagePath);
+          } catch (err) {
+            logger.error({ url: item.imageUrl, err }, "Image download failed");
+            throw new Error(`Failed to download image for scene ${i + 1}: ${item.imageUrl}`);
+          }
+
+          media = {
+            type: "image",
+            url: `http://127.0.0.1:${config.port}/tmp/${path.basename(tempImagePath)}`,
+            displayMode: item.displayMode ?? "ken_burns",
+            duration: sceneDurationMs,
+          };
+        }
+
+        scenes.push({
+          media,
+          durationMs: sceneDurationMs,
+          captions,
+          audioUrl,
+        });
+
+        logger.debug({ videoId, scene: i + 1, type: item.type }, "Scene prepared");
+      }
+
+      recordStage("SceneProcessing");
       this.update(videoId, "processing", PROGRESS.MEDIA_DONE, "rendering");
 
       // 4. Compose Remotion render input
       logger.info({ videoId }, "Step 4: Remotion rendering");
-      const musicTrack = input.useBackgroundMusic
-        ? this.musicService.pickTrack(input.backgroundMusicStyle)
-        : undefined;
+      let musicTrack;
+      
+      if (input.config?.backgroundMusicUrl) {
+        musicTrack = {
+          file: "external",
+          url: input.config.backgroundMusicUrl,
+          start: 0,
+          end: finalTotalMs / 1000,
+          mood: "happy" as any, // Only needed for type constraints
+        };
+      } else if (input.config?.useBackgroundMusic ?? true) {
+        musicTrack = this.musicService.pickTrack(input.config?.backgroundMusicStyle);
+      }
 
       const renderInput = {
         scenes: scenes.map((s) => ({
           media: s.media,
           durationMs: s.durationMs,
           captions: s.captions,
+          audioUrl: s.audioUrl,
         })),
-        voiceover: { url: `http://localhost:${config.port}/tmp/${path.basename(audioMp3Path)}` },
         music: musicTrack,
         config: {
           durationMs: finalTotalMs,
           orientation,
-          useSrt: input.useSrt,
-          srtStyle: input.srtStyle,
+          useSrt: input.config?.useSrt ?? true,
+          srtStyle: input.config?.srtStyle,
           musicVolume: input.config?.musicVolume ?? "medium",
           paddingBack: paddingBackMs,
         },
@@ -255,80 +255,13 @@ export class VideoPipeline {
     }
   }
 
-  private async buildScenes(
-    input: CreateVideoInput,
-    captions: Caption[],
-    audioMp3Path: string,
-    durationsMs: number[],
-    orientation: "landscape" | "portrait",
-    tempFiles: string[],
-    videoId: string,
-  ): Promise<ComposedScene[]> {
-    const scenes: ComposedScene[] = [];
-    let currentTimeMs = 0;
-
-    for (let i = 0; i < input.videoItems.length; i++) {
-      const item = input.videoItems[i];
-      const sceneDurationMs = durationsMs[i];
-      const sceneStartMs = currentTimeMs;
-      const sceneEndMs = sceneStartMs + sceneDurationMs;
-      currentTimeMs = sceneEndMs;
-
-      // Filter captions accurately based on their actual timing bounds
-      const sceneCaption = captions.filter(
-         c => (c.startMs >= sceneStartMs && c.startMs < sceneEndMs) || (c.endMs > sceneStartMs && c.endMs <= sceneEndMs)
-      );
-
-      // Build scene media URL
-      let media: SceneMedia;
-
-      if (item.type === "animated_text" || item.type === "formula" || item.type === "3d_image") {
-        // Text-based scenes — no external media needed
-        media = {
-          type: item.type,
-          url: item.imageUrl || "content",
-          displayMode: item.displayMode,
-          duration: sceneDurationMs,
-        };
-      } else {
-        // Image scene — imageUrl is required (validated by schema)
-        if (!item.imageUrl) {
-          throw new Error(`imageUrl is required for image scene ${i + 1}`);
-        }
-
-        const tempImagePath = path.join(config.tempDirPath, `${cuid()}.jpg`);
-        tempFiles.push(tempImagePath);
-
-        try {
-          await this.downloadFile(item.imageUrl, tempImagePath);
-        } catch (err) {
-          logger.error({ url: item.imageUrl, err }, "Image download failed");
-          throw new Error(`Failed to download image for scene ${i + 1}: ${item.imageUrl}`);
-        }
-
-        media = {
-          type: "image",
-          url: `http://localhost:${config.port}/tmp/${path.basename(tempImagePath)}`,
-          displayMode: item.displayMode ?? "ken_burns",
-          duration: sceneDurationMs,
-        };
-      }
-
-      scenes.push({
-        media,
-        durationMs: sceneDurationMs,
-        captions: sceneCaption,
-      });
-
-      logger.debug({ videoId, scene: i + 1, type: item.type }, "Scene prepared");
-    }
-
-    return scenes;
-  }
 
   private downloadFile(url: string, destPath: string, maxRedirects = 5): Promise<void> {
     return new Promise((resolve, reject) => {
       const attempt = (currentUrl: string, redirectsLeft: number) => {
+        // Node 18+ fix: map localhost to 127.0.0.1 to avoid IPv6 ECONNREFUSED issues
+        currentUrl = currentUrl.replace('http://localhost:', 'http://127.0.0.1:');
+        
         const protocol = currentUrl.startsWith("https") ? https : http;
         const options = {
           headers: {

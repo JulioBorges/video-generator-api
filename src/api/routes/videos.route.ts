@@ -28,7 +28,7 @@ export function createVideosRouter(
       jobsRepo.create(videoId, input);
       jobQueue.enqueue(videoId, input);
 
-      logger.info({ videoId, script: input.script.slice(0, 50) }, "Video job created");
+      logger.info({ videoId, scenesCount: input.sceneItems.length }, "Video job created");
       res.status(201).json({ videoId });
     } catch (err) {
       next(err);

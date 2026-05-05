@@ -63,7 +63,7 @@ describe("OpenAITTSService", () => {
     });
 
     it("should generate TTS and fetch timestamps for a given text", async () => {
-      const result = await service.generate("Hello world.", "en", "alloy", "/tmp/test", mockFFmpeg);
+      const result = await service.generate("Hello world.", "en", "alloy", undefined, "/tmp/test", mockFFmpeg);
 
       // Post should be called twice per chunk: one for /audio/speech, one for /audio/transcriptions
       expect(axios.post).toHaveBeenCalledTimes(2);
@@ -91,7 +91,7 @@ describe("OpenAITTSService", () => {
         }
       });
 
-      const result = await service.generate("Hello world.", "en", "alloy", "/tmp/test", mockFFmpeg);
+      const result = await service.generate("Hello world.", "en", "alloy", undefined, "/tmp/test", mockFFmpeg);
 
       // Generates TTS but returns empty timestamps on Whisper failure
       expect(result.audioFilePath).toContain("-final.mp3");

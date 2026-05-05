@@ -15,8 +15,8 @@ export interface RemotionRenderInput {
     };
     durationMs: number;
     captions: Array<{ text: string; startMs: number; endMs: number }>;
+    audioUrl?: string;
   }>;
-  voiceover: { url: string };
   music?: {
     url: string;
     file: string;

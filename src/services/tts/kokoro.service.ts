@@ -129,10 +129,10 @@ export class KokoroTTSService implements TTSProvider {
                   const finalPhonemes = this.postProcessIpa(phonemes, lang, isEnglish);
                   
                   // 4. Generate from ids (bypassing internal phonemizer)
-                  // NOTE: Do NOT prepend language prefix — the tokenizer treats each char as a phoneme symbol.
-                  // The original kokoro-js never prefixes language codes into the IPA string.
-                  logger.info({ finalPhonemes }, "Kokoro generating from IPA");
-                  const { input_ids } = this.ttsInstance.tokenizer(finalPhonemes, { truncation: true });
+                  // NOTE: Append a space to ensure the model processes the last phonemes fully
+                  const phonemesWithPadding = finalPhonemes + " ";
+                  logger.info({ finalPhonemes: phonemesWithPadding }, "Kokoro generating from IPA");
+                  const { input_ids } = this.ttsInstance.tokenizer(phonemesWithPadding, { truncation: true });
                   return this.ttsInstance.generate_from_ids(input_ids, options);
                 } catch (err) {
                   logger.warn({ err }, "ephone generation failed, falling back to original generate");
@@ -316,8 +316,9 @@ export class KokoroTTSService implements TTSProvider {
           );
         }
 
-        // 2. Transcribe chunk with Whisper to get word-level timestamps (fallback to estimation)
-        const chunkTimestamps = await this.transcribeForTimestamps(chunkBuffer, chunk, language, audio.sampling_rate);
+        // 2. Estimate timestamps mathematically (since scenes are short, this is sufficient)
+        const rawAudioDurationSec = (chunkBuffer.length - 44) / (audio.sampling_rate * 2);
+        const chunkTimestamps = this.estimateTimestampsForText(chunk, rawAudioDurationSec);
 
         // 3. Adjust timestamps with the current cumulative offset
         const adjustedTimestamps = chunkTimestamps.map((t) => ({
@@ -329,12 +330,12 @@ export class KokoroTTSService implements TTSProvider {
         allTimestamps.push(...adjustedTimestamps);
 
         // 4. Update offset for next chunk
-        const chunkDurationMs =
-          chunkTimestamps.length > 0 && chunkTimestamps[chunkTimestamps.length - 1].endMs > 0
-            ? chunkTimestamps[chunkTimestamps.length - 1].endMs
-            : this.estimateDurationMs(chunk);
+        // 4. Update offset for next chunk using the ACTUAL physical audio duration
+        // because ffmpeg will concatenate the files back-to-back.
+        // encodeWAV adds 0.25s of padding.
+        const wavDurationMs = Math.round((actualDurationSec + 0.25) * 1000);
 
-        currentOffsetMs += chunkDurationMs;
+        currentOffsetMs += wavDurationMs;
       } catch (err: any) {
         throw new Error(`Kokoro TTS chunk ${i + 1} failed: ${err.message}`);
       }
@@ -378,78 +379,35 @@ export class KokoroTTSService implements TTSProvider {
     return chunks;
   }
 
-  private async transcribeForTimestamps(
-    audioBuffer: Buffer,
-    text: string,
-    language: Language,
-    sampleRate: number = 24000
-  ): Promise<WordTimestamp[]> {
-    const rawAudioDurationSec = (audioBuffer.length - 44) / (sampleRate * 2);
 
-    if (!this.openaiApiKey) {
-      logger.info("OPENAI_API_KEY not configured, falling back to math estimation for Kokoro timestamps");
-      return this.estimateTimestampsForText(text, rawAudioDurationSec);
-    }
-
-    try {
-      const formModule = await import("form-data");
-      const FormData = formModule.default || formModule;
-      const form = new FormData();
-
-      form.append("file", audioBuffer, {
-        filename: "speech.wav",
-        contentType: "audio/wav",
-      });
-      form.append("model", "whisper-1");
-      form.append("language", language);
-      form.append("response_format", "verbose_json");
-      form.append("timestamp_granularities[]", "word");
-
-      const response = await axios.post(
-        `${this.openaiBaseUrl}/audio/transcriptions`,
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${this.openaiApiKey}`,
-            ...form.getHeaders(),
-          },
-        },
-      );
-
-      const data = response.data as {
-        duration?: number;
-        words?: Array<{ word: string; start: number; end: number }>;
-      };
-
-      if (!data.words || data.words.length === 0) {
-        logger.warn("Whisper returned no word timestamps, falling back to estimation");
-        return this.estimateTimestampsForText(text, data.duration ?? rawAudioDurationSec);
-      }
-
-      return data.words.map((w) => ({
-        word: w.word.trim(),
-        startMs: Math.round(w.start * 1000),
-        endMs: Math.round(w.end * 1000),
-      }));
-    } catch (err) {
-      logger.warn({ err }, "Whisper transcription failed, using estimated timestamps");
-      return this.estimateTimestampsForText(text, rawAudioDurationSec);
-    }
-  }
 
   private estimateTimestampsForText(text: string, durationSec: number): WordTimestamp[] {
     if (durationSec <= 0) return [];
     
-    // Fallback mathematical logic
     const words = text.split(/\s+/).filter(w => w.length > 0);
     if (words.length === 0) return [];
 
     const durationMs = durationSec * 1000;
-    const timePerWord = durationMs / words.length;
+    
+    // Calculate total "weight" of all words based on character length
+    // Add base weight so very short words aren't skipped, and extra for punctuation.
+    const wordWeights = words.map(word => {
+      let weight = word.length + 1; 
+      if (/[.,!?;:]$/.test(word)) {
+        weight += 3; // add extra time for punctuation pauses
+      }
+      return weight;
+    });
 
+    const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0);
+    const msPerWeight = durationMs / totalWeight;
+
+    let currentMs = 0;
     return words.map((word, index) => {
-      const startMs = Math.round(index * timePerWord);
-      const endMs = Math.round((index + 1) * timePerWord);
+      const startMs = Math.round(currentMs);
+      currentMs += wordWeights[index] * msPerWeight;
+      const endMs = Math.round(currentMs);
+      
       return {
         word,
         startMs,
@@ -465,7 +423,9 @@ export class KokoroTTSService implements TTSProvider {
 
   private encodeWAV(audioData: Float32Array, sampleRate: number): Buffer {
     const numChannels = 1;
-    const numFrames = audioData.length;
+    // Add 250ms of silence padding to the end to prevent truncation by players/converters
+    const paddingFrames = Math.floor(sampleRate * 0.25);
+    const numFrames = audioData.length + paddingFrames;
     const bytesPerSample = 2; // 16-bit
     const byteRate = sampleRate * numChannels * bytesPerSample;
     const blockAlign = numChannels * bytesPerSample;
@@ -493,8 +453,10 @@ export class KokoroTTSService implements TTSProvider {
 
     // write audio data
     let offset = 44;
-    for (let i = 0; i < audioData.length; i++) {
-      let s = Math.max(-1, Math.min(1, audioData[i]));
+    for (let i = 0; i < numFrames; i++) {
+      // Use original data or silence for padding
+      const sample = i < audioData.length ? audioData[i] : 0;
+      let s = Math.max(-1, Math.min(1, sample));
       buffer.writeInt16LE(s < 0 ? s * 0x8000 : Math.round(s * 0x7FFF), offset);
       offset += 2;
     }

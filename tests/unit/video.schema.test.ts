@@ -3,8 +3,7 @@ import { createVideoSchema } from "../../src/types/video.types";
 
 describe("createVideoSchema validation", () => {
   const validInput = {
-    script: "This is a valid script with more than ten characters.",
-    videoItems: [{ searchTerm: "AI robots", type: "image" as const }],
+    sceneItems: [{ imageUrl: "https://example.com/image.jpg", type: "image" as const, duration: 5 }],
   };
 
   it("accepts valid minimal input", () => {
@@ -15,19 +14,19 @@ describe("createVideoSchema validation", () => {
   it("applies defaults for optional fields", () => {
     const result = createVideoSchema.parse(validInput);
     expect(result.language).toBe("pt");
-    expect(result.useSrt).toBe(true);
-    expect(result.useBackgroundMusic).toBe(true);
+    expect(result.config.useSrt).toBe(true);
+    expect(result.config.useBackgroundMusic).toBe(true);
     expect(result.config.orientation).toBe("landscape");
     expect(result.config.paddingBack).toBe(1500);
   });
 
-  it("rejects script shorter than 10 chars", () => {
-    const result = createVideoSchema.safeParse({ ...validInput, script: "short" });
+  it("rejects scene items without duration and without narration", () => {
+    const result = createVideoSchema.safeParse({ ...validInput, sceneItems: [{ imageUrl: "https://example.com/image.jpg", type: "image" as const }] });
     expect(result.success).toBe(false);
   });
 
-  it("rejects empty videoItems", () => {
-    const result = createVideoSchema.safeParse({ ...validInput, videoItems: [] });
+  it("rejects empty sceneItems", () => {
+    const result = createVideoSchema.safeParse({ ...validInput, sceneItems: [] });
     expect(result.success).toBe(false);
   });
 
@@ -36,7 +35,7 @@ describe("createVideoSchema validation", () => {
     for (const type of types) {
       const result = createVideoSchema.safeParse({
         ...validInput,
-        videoItems: [{ searchTerm: "test", type }],
+        sceneItems: [{ imageUrl: "https://example.com/image.jpg", type, duration: 5 }],
       });
       expect(result.success).toBe(true);
     }

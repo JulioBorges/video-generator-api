@@ -27,10 +27,9 @@ function registerTools(
     "create-video",
     "Create a YouTube video generation job from a script and video items",
     {
-      script: z.string().min(10).describe("The video narration script (min 10 chars)"),
       language: z.enum(["pt", "en"]).default("pt").describe("Script language"),
       ttsProvider: z.enum(["openai", "elevenlabs", "google", "kokoro"]).default("openai").describe("The TTS provider to use"),
-      videoItems: z
+      sceneItems: z
         .array(
           z.object({
             imageUrl: z.string().describe("Image URL (required for image-type scenes)"),
@@ -41,32 +40,34 @@ function registerTools(
               .enum(["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"])
               .optional()
               .describe("How the media is displayed"),
-            duration: z.number().positive().optional().describe("Custom duration in seconds for this scene"),
+            duration: z.number().positive().optional().describe("Custom duration in seconds for this scene. Required if sceneNarration is empty."),
+            sceneNarration: z.string().optional().describe("Narration for this specific scene. The scene length will match the audio duration."),
           }),
         )
         .min(1)
         .describe("List of scene items (imageUrl required for image scenes)"),
-      useSrt: z.boolean().default(true).describe("Burn subtitles into video"),
-      srtStyle: z
-        .object({
-          position: z.enum(["top", "center", "bottom"]).default("bottom").describe("Subtitle position"),
-          backgroundColor: z.string().default("#0066ff").describe("Subtitle background color (hex)"),
-          fontSize: z.number().positive().default(48).describe("Subtitle font size in px"),
-          fontFamily: z.string().default("Inter").describe("Subtitle font family"),
-        })
-        .optional()
-        .describe("Subtitle styling options"),
-      useBackgroundMusic: z.boolean().default(true).describe("Add background music"),
-      backgroundMusicStyle: z
-        .enum(["sad", "melancholic", "happy", "euphoric", "excited", "chill", "uneasy", "angry", "dark", "hopeful", "contemplative", "funny"])
-        .optional()
-        .describe("Music mood"),
       config: z
         .object({
           orientation: z.enum(["landscape", "portrait"]).default("landscape").describe("Video orientation"),
           voice: z.string().optional().describe("Voice identifier. For ElevenLabs: voice ID (e.g. pNInz6obpgDQGcFmaJgB). For OpenAI: voice name (alloy, echo, fable, onyx, nova, shimmer). For Google Cloud: full voice name (e.g. pt-BR-Neural2-A, en-US-Neural2-D). For Kokoro: voice name (e.g. af_heart, pt_br_voice)."),
           paddingBack: z.number().nonnegative().default(1500).describe("Silence padding at end (ms)"),
           musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium").describe("Background music volume"),
+          useSrt: z.boolean().default(true).describe("Burn subtitles into video"),
+          srtStyle: z
+            .object({
+              position: z.enum(["top", "center", "bottom"]).default("bottom").describe("Subtitle position"),
+              backgroundColor: z.string().default("#0066ff").describe("Subtitle background color (hex)"),
+              fontSize: z.number().positive().default(48).describe("Subtitle font size in px"),
+              fontFamily: z.string().default("Inter").describe("Subtitle font family"),
+            })
+            .optional()
+            .describe("Subtitle styling options"),
+          useBackgroundMusic: z.boolean().default(true).describe("Add background music"),
+          backgroundMusicStyle: z
+            .enum(["sad", "melancholic", "happy", "euphoric", "excited", "chill", "uneasy", "angry", "dark", "hopeful", "contemplative", "funny"])
+            .optional()
+            .describe("Music mood"),
+          backgroundMusicUrl: z.string().url().optional().describe("Optional URL to an external audio file to use as background music."),
         })
         .optional()
         .describe("Video configuration options"),

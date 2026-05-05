@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export type VideoStatus = "queued" | "processing" | "ready" | "failed";
 
-export type VideoItemType = "image" | "animated_text" | "formula" | "3d_image";
+export type SceneItemType = "image" | "animated_text" | "formula" | "3d_image";
 
 export type DisplayMode =
   | "fit"
@@ -33,16 +33,20 @@ export type MusicMood =
   | "contemplative"
   | "funny";
 
-export const videoItemSchema = z.object({
+export const sceneItemSchema = z.object({
   imageUrl: z.string().url().optional(),
   type: z.enum(["image", "animated_text", "formula", "3d_image"]),
   displayMode: z
     .enum(["fit", "ken_burns", "static", "slide", "typewriter", "fade", "reveal"])
     .optional(),
   duration: z.number().positive().optional(),
+  sceneNarration: z.string().optional(),
 }).refine(data => data.type !== "image" || !!data.imageUrl, {
   message: "imageUrl is required for image-type scenes",
   path: ["imageUrl"],
+}).refine(data => !!data.sceneNarration || !!data.duration, {
+  message: "duration is required when sceneNarration is empty",
+  path: ["duration"],
 });
 
 export const srtStyleSchema = z.object({
@@ -58,13 +62,6 @@ export const videoConfigSchema = z.object({
   voiceSpeed: z.number().min(0.25).max(4.0).default(1.0),
   paddingBack: z.number().nonnegative().default(1500),
   musicVolume: z.enum(["muted", "low", "medium", "high"]).default("medium"),
-});
-
-export const createVideoSchema = z.object({
-  ttsProvider: z.enum(["openai", "elevenlabs", "google", "kokoro"]).default("openai"),
-  script: z.string().min(10, "Script must be at least 10 characters"),
-  language: z.enum(["pt", "en"]).default("pt"),
-  videoItems: z.array(videoItemSchema).min(1, "At least one video item is required"),
   useSrt: z.boolean().default(true),
   srtStyle: srtStyleSchema.optional().default({}),
   useBackgroundMusic: z.boolean().default(true),
@@ -84,12 +81,19 @@ export const createVideoSchema = z.object({
       "funny",
     ])
     .optional(),
+  backgroundMusicUrl: z.string().url().optional(),
+});
+
+export const createVideoSchema = z.object({
+  ttsProvider: z.enum(["openai", "elevenlabs", "google", "kokoro"]).default("openai"),
+  language: z.enum(["pt", "en"]).default("pt"),
+  sceneItems: z.array(sceneItemSchema).min(1, "At least one scene item is required"),
   config: videoConfigSchema.optional().default({}),
   webhookUrl: z.string().url("webhookUrl must be a valid URL").optional(),
 });
 
 export type CreateVideoInput = z.infer<typeof createVideoSchema>;
-export type VideoItem = z.infer<typeof videoItemSchema>;
+export type SceneItem = z.infer<typeof sceneItemSchema>;
 export type SrtStyle = z.infer<typeof srtStyleSchema>;
 export type VideoConfig = z.infer<typeof videoConfigSchema>;
 
@@ -117,7 +121,7 @@ export type CaptionPage = {
 };
 
 export type SceneMedia = {
-  type: VideoItemType;
+  type: SceneItemType;
   url: string;
   displayMode?: DisplayMode;
   duration?: number;
@@ -129,6 +133,7 @@ export type ComposedScene = {
   media: SceneMedia;
   durationMs: number;
   captions: Caption[];
+  audioUrl?: string;
 };
 
 export type MusicTrack = {

@@ -60,6 +60,8 @@ export function createApp(
 
   // Unauthenticated static routes for Remotion (headless Chromium cannot send API-Key headers)
   app.use("/tmp", express.static(config.tempDirPath, { maxAge: "1h" }));
+  // Also serve images from the project's local temp folder if they are manually placed there
+  app.use("/tmp", express.static(path.join(config.packageDirPath, "temp"), { maxAge: "1h" }));
   app.use("/music", express.static(config.musicDirPath, { maxAge: "1d" }));
 
   // Protected API routes

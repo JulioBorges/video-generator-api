@@ -85,12 +85,12 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      const result = await service.generate("Hello world", "en", undefined, "/tmp/test", mockFFmpeg);
+      const result = await service.generate("Hello world", "en", undefined, undefined, "/tmp/test", mockFFmpeg);
 
       expect(mockSynthesizeSpeech).toHaveBeenCalledWith({
         input: { ssml: expect.stringContaining("<speak>") },
         voice: { name: "en-US-Neural2-D", languageCode: "en-US" },
-        audioConfig: { audioEncoding: "MP3" },
+        audioConfig: { audioEncoding: "MP3", speakingRate: 1 },
         enableTimePointing: [1],
       });
 
@@ -116,7 +116,7 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      await service.generate("Olá mundo", "pt", "pt-BR-Wavenet-A", "/tmp/test", mockFFmpeg);
+      await service.generate("Olá mundo", "pt", "pt-BR-Wavenet-A", undefined, "/tmp/test", mockFFmpeg);
 
       expect(mockSynthesizeSpeech).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -128,7 +128,7 @@ describe("GoogleTTSService", () => {
     it("should throw an error if no audio content is returned", async () => {
       mockSynthesizeSpeech.mockResolvedValue([{}]);
       
-      await expect(service.generate("Hello", "en", undefined, "/tmp/test", mockFFmpeg)).rejects.toThrow("Google TTS failed for chunk 1: Google TTS returned no audio content");
+      await expect(service.generate("Hello", "en", undefined, undefined, "/tmp/test", mockFFmpeg)).rejects.toThrow("Google TTS failed for chunk 1: Google TTS returned no audio content");
     });
     
     it("should process multiple chunks", async () => {
@@ -145,7 +145,7 @@ describe("GoogleTTSService", () => {
         },
       ]);
 
-      const result = await service.generate("Chunk one Chunk two", "en", undefined, "/tmp/test", mockFFmpeg);
+      const result = await service.generate("Chunk one Chunk two", "en", undefined, undefined, "/tmp/test", mockFFmpeg);
       expect(mockSynthesizeSpeech).toHaveBeenCalledTimes(2);
       expect(result.timestamps).toHaveLength(4); // 2 per chunk
     });

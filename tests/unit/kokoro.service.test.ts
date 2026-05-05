@@ -50,20 +50,22 @@ describe("KokoroTTSService", () => {
   });
 
   describe("estimateTimestampsForText", () => {
-    it("should generate estimated timestamps based on duration and word count", () => {
-      const text = "This is a test sentence";
-      const durationSec = 5; // 5 words in 5 seconds = 1s per word
+    it("should generate estimated timestamps proportionally based on word length", () => {
+      const text = "A inconstitucionalidade é ruim.";
+      const durationSec = 4; // 4000ms
       
       const timestamps = (service as any).estimateTimestampsForText(text, durationSec);
       
-      expect(timestamps).toHaveLength(5);
-      expect(timestamps[0].word).toBe("This");
-      expect(timestamps[0].startMs).toBe(0);
-      expect(timestamps[0].endMs).toBe(1000);
+      expect(timestamps).toHaveLength(4);
+      expect(timestamps[0].word).toBe("A");
+      expect(timestamps[1].word).toBe("inconstitucionalidade");
+      expect(timestamps[3].word).toBe("ruim.");
       
-      expect(timestamps[4].word).toBe("sentence");
-      expect(timestamps[4].startMs).toBe(4000);
-      expect(timestamps[4].endMs).toBe(5000);
+      const durationA = timestamps[0].endMs - timestamps[0].startMs;
+      const durationLong = timestamps[1].endMs - timestamps[1].startMs;
+      
+      expect(durationLong).toBeGreaterThan(durationA * 3); // Must be significantly longer
+      expect(timestamps[3].endMs).toBe(4000); // Last word ends at total duration
     });
 
     it("should return empty array if text is empty or duration is 0", () => {
@@ -91,41 +93,28 @@ describe("KokoroTTSService", () => {
       });
     });
 
-    it("should generate TTS using Kokoro and Whisper timestamps", async () => {
-      const result = await service.generate("Hello world.", "en", "af_heart", "/tmp/test", mockFFmpeg);
+    it("should generate TTS using Kokoro and estimated timestamps", async () => {
+      const result = await service.generate("Hello world.", "en", "af_heart", undefined, "/tmp/test", mockFFmpeg);
       
-      expect(mockKokoroGenerate).toHaveBeenCalledWith("Hello world.", { voice: "af_heart" });
+      expect(mockKokoroGenerate).toHaveBeenCalledWith("Hello world.", { voice: "af_heart", speed: 1 });
       
-      // Axios should be called to invoke Whisper
-      expect(axios.post).toHaveBeenCalled();
+      // Axios should NOT be called since Whisper is removed
+      expect(axios.post).not.toHaveBeenCalled();
       
       expect(result.durationMs).toBeGreaterThan(0);
       expect(result.timestamps).toHaveLength(2);
       expect(result.timestamps[0].word).toBe("Hello");
-      expect(result.timestamps[0].startMs).toBe(0);
-      expect(result.timestamps[0].endMs).toBe(500);
+      expect(result.timestamps[1].word).toBe("world.");
       
       expect(result.audioFilePath).toContain("tts-");
       expect(result.audioFilePath).toContain("-final.mp3");
     });
 
-    it("should fallback to math estimation if no OpenAI key is provided", async () => {
-      const serviceWithoutKey = new KokoroTTSService(); // no API key
-      vi.spyOn(serviceWithoutKey as any, "getTTSInstance").mockResolvedValue(mockKokoroInstance);
-      const result = await serviceWithoutKey.generate("Hello world.", "en", "af_heart", "/tmp/test", mockFFmpeg);
-      
-      // Whisper should not be called
-      expect(axios.post).not.toHaveBeenCalled();
-      
-      expect(result.timestamps).toHaveLength(2);
-      expect(result.timestamps[0].word).toBe("Hello");
-      expect(result.timestamps[1].word).toBe("world.");
-      // It will use estimateTimestampsForText which derives time from rawAudioDurationSec
-    });
+
 
     it("should default to pm_alex for pt language if voice is not provided", async () => {
-      await service.generate("Olá mundo.", "pt", undefined, "/tmp/test", mockFFmpeg);
-      expect(mockKokoroGenerate).toHaveBeenCalledWith("Olá mundo.", { voice: "pm_alex" });
+      await service.generate("Olá mundo.", "pt", undefined, undefined, "/tmp/test", mockFFmpeg);
+      expect(mockKokoroGenerate).toHaveBeenCalledWith("Olá mundo.", { voice: "pm_alex", speed: 1 });
     });
   });
 });

@@ -18,8 +18,8 @@ export interface VideoCompositionProps {
     media: SceneMedia;
     durationMs: number;
     captions: Caption[];
+    audioUrl?: string;
   }>;
-  voiceover: { url: string };
   music?: MusicTrack;
   config: {
     durationMs: number;
@@ -41,18 +41,13 @@ export function calculateVolume(volume?: string): number {
   }
 }
 
-export function VideoComposition({ scenes, voiceover, music, config }: VideoCompositionProps) {
+export function VideoComposition({ scenes, music, config }: VideoCompositionProps) {
   const { fps } = useVideoConfig();
   const frame = useCurrentFrame();
   let offsetFrames = 0;
 
-  // Flatten all captions with absolute timing
-  const allCaptions: Caption[] = scenes.flatMap((scene) => scene.captions);
-
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Voiceover */}
-      {voiceover && <Audio src={voiceover.url} />}
 
       {/* Music */}
       {music && (
@@ -77,18 +72,21 @@ export function VideoComposition({ scenes, voiceover, music, config }: VideoComp
               {scene.media.type === "image" && <ImageScene media={scene.media} durationFrames={durationFrames} />}
               {scene.media.type === "animated_text" && <AnimatedTextScene media={scene.media} />}
               {scene.media.type === "formula" && <FormulaScene media={scene.media} />}
+              
+              {/* Scene Audio */}
+              {scene.audioUrl && <Audio src={scene.audioUrl} />}
+              
+              {/* Subtitles Overlay */}
+              {config.useSrt && scene.captions.length > 0 && (
+                <Subtitles
+                  captions={scene.captions}
+                  style={config.srtStyle}
+                />
+              )}
             </AbsoluteFill>
           </Sequence>
         );
       })}
-
-      {/* Subtitles overlay (rendered on top of everything) */}
-      {config.useSrt && (
-        <Subtitles
-          captions={allCaptions}
-          style={config.srtStyle}
-        />
-      )}
     </AbsoluteFill>
   );
 }
