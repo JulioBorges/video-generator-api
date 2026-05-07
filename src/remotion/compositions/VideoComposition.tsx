@@ -54,8 +54,8 @@ export function VideoComposition({ scenes, music, config }: VideoCompositionProp
         <Audio
           src={music.url}
           startFrom={Math.round(music.start * fps)}
-          endAt={Math.round(music.end * fps)}
           volume={calculateVolume(config.musicVolume)}
+          loop
         />
       )}
 
