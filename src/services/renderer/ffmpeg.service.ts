@@ -2,14 +2,72 @@ import ffmpeg from "fluent-ffmpeg";
 import { Readable } from "stream";
 import fs from "fs-extra";
 import path from "path";
+import { execSync } from "child_process";
 import { logger } from "../../logger";
 
 export class FFmpegService {
   static async init(): Promise<FFmpegService> {
-    const installer = await import("@ffmpeg-installer/ffmpeg");
-    ffmpeg.setFfmpegPath(installer.path);
-    logger.info({ path: installer.path }, "FFmpeg initialized");
+    const ffmpegPath = FFmpegService.resolveExecutable("ffmpeg");
+    const ffprobePath = FFmpegService.resolveExecutable("ffprobe");
+
+    ffmpeg.setFfmpegPath(ffmpegPath);
+    if (ffprobePath) {
+      ffmpeg.setFfprobePath(ffprobePath);
+    }
+
+    logger.info({ ffmpegPath, ffprobePath }, "FFmpeg initialized");
     return new FFmpegService();
+  }
+
+  /**
+   * Resolve executable path with priority:
+   * 1. System PATH (works inside Docker where apt-get installed ffmpeg)
+   * 2. Well-known Linux/Mac paths
+   * 3. @ffmpeg-installer bundled binary (fallback for local dev)
+   */
+  private static resolveExecutable(name: "ffmpeg" | "ffprobe"): string {
+    // 1. Check system PATH via `which`
+    try {
+      const systemPath = execSync(`which ${name}`, { encoding: "utf-8" }).trim();
+      if (systemPath && fs.existsSync(systemPath)) {
+        logger.debug({ name, path: systemPath }, "Found executable in system PATH");
+        return systemPath;
+      }
+    } catch {
+      // `which` failed — not in PATH
+    }
+
+    // 2. Check well-known paths
+    const knownPaths = [
+      `/usr/bin/${name}`,
+      `/usr/local/bin/${name}`,
+      `/opt/homebrew/bin/${name}`,
+    ];
+    for (const p of knownPaths) {
+      if (fs.existsSync(p)) {
+        logger.debug({ name, path: p }, "Found executable at well-known path");
+        return p;
+      }
+    }
+
+    // 3. Fallback to @ffmpeg-installer (only supports ffmpeg, not ffprobe)
+    if (name === "ffmpeg") {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const installer = require("@ffmpeg-installer/ffmpeg");
+        if (installer?.path && fs.existsSync(installer.path)) {
+          logger.debug({ name, path: installer.path }, "Using @ffmpeg-installer bundled binary");
+          return installer.path;
+        }
+      } catch {
+        // package not available
+      }
+    }
+
+    throw new Error(
+      `Could not find '${name}' executable. ` +
+      `Install ffmpeg on the system (apt-get install ffmpeg) or ensure @ffmpeg-installer/ffmpeg is installed.`,
+    );
   }
 
   async saveAsMp3(audioBuffer: Buffer, outputPath: string): Promise<void> {
