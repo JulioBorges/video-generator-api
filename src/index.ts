@@ -33,7 +33,7 @@ async function bootstrap() {
   const storage = createStorageService(config);
   const musicService = new MusicService(
     config.musicDirPath,
-    `http://0.0.0.0:${config.port}`,
+    `http://127.0.0.1:${config.port}`,
   );
   musicService.ensureMusicFilesExist();
 
